@@ -1,0 +1,101 @@
+openapi: 3.0.1
+info:
+  title: Switch Machine Driver Server (SMDS)
+  description: 'This allows controlling of tortoise switch machines over a rest api'
+  contact:
+    email: zacharyduve@gmail.com
+  license:
+    name: GPLv3
+    url: https://www.gnu.org/licenses/gpl-3.0.en.html
+  version: 0.1.1
+paths:
+  /config:
+    get:
+      summary: Get the current configuration of the SMDS
+      responses:
+        200:
+          description: Was able to successfully get the servers configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMDSConfig'
+        500:
+          description: Was unable to process request due to internal server error, please try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update the current configuration of the SMDS
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMDSConfig'
+      responses:
+        200:
+          description: Was able to successfully update the servers configuration, here is current configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMDSConfig'
+        500:
+          description: Was unable to update the configuration due to internal server error, please try again
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    SMDSConfig:
+      type: object
+      properties:
+        numberControllerBoards:
+          type: integer
+    SwitchMachine:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/SwitchMachineId'
+        position:
+          $ref: '#/components/schemas/SwitchMachinePosition'
+        motorState:
+          $ref: '#/components/schemas/SwitchMachineMotorState'
+        gpio0:
+          $ref: '#/components/schemas/GPIOState'
+        gpio1:
+          $ref: '#/components/schemas/GPIOState'
+    SwitchMachineUpdateRequest:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/SwitchMachineId'
+        position:
+          $ref: '#/components/schemas/SwitchMachinePosition'
+        gpio0:
+          $ref: '#/components/schemas/GPIOState'
+        gpio1:
+          $ref: '#/components/schemas/GPIOState'
+    SMDSId:
+      type: string
+    SwitchMachineId:
+      type: string
+    GPIOState:
+      type: string
+      enum: ["OFF","ON"]
+    SwitchMachinePosition:
+      type: string
+      enum: ["position 0", "position 1"]
+    SwitchMachineMotorState:
+      type: string
+      enum: ["idle", "to position 0", "to position 1", "brake"]
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        causedby:
+          $ref: '#/components/schemas/Error'
+ 
