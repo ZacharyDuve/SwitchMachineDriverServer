@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/api/handler"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/handler"
 	"github.com/gorilla/mux"
 )
 

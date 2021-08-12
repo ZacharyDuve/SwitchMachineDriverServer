@@ -3,13 +3,14 @@ package smdsconfig
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-	"math/rand"
 	"os"
 )
 
 const (
-	configFilePath string = "config.json"
+	configFilePath            string = "config.json"
+	maxNumberControllerBoards uint   = 20
 )
 
 type SMDSConfig interface {
@@ -27,11 +28,23 @@ func (this *smdsConfig) NumberControllerBoards() uint {
 var curSMDSConfig *smdsConfig
 
 func UpdateAndSaveSMDSConfig(newSMDSConfig SMDSConfig) error {
-	return errors.New("UNIMPLEMENTED")
+	var err error
+
+	if newSMDSConfig.NumberControllerBoards() > maxNumberControllerBoards {
+		err = errors.New(fmt.Sprintf("Requested Number of Controller Boards %d exceeds max of %d", newSMDSConfig.NumberControllerBoards(), maxNumberControllerBoards))
+	} else {
+		writeableConfig := &smdsConfig{NumControllerBoards: newSMDSConfig.NumberControllerBoards()}
+		err = writeSMDSConfigToJSONFile(writeableConfig)
+		if err == nil {
+			curSMDSConfig.NumControllerBoards = writeableConfig.NumControllerBoards
+		}
+	}
+
+	return err
 }
 
 func writeSMDSConfigToJSONFile(config *smdsConfig) error {
-	configFile, err := os.Open(configFilePath)
+	configFile, err := os.Create(configFilePath)
 	defer configFile.Close()
 
 	if err == nil {
@@ -44,9 +57,6 @@ func writeSMDSConfigToJSONFile(config *smdsConfig) error {
 func newDefaultConfig() *smdsConfig {
 	config := &smdsConfig{}
 	config.NumControllerBoards = 0
-	randBytes := make([]byte, 8)
-	rand.Read(randBytes)
-
 	return config
 }
 
@@ -67,7 +77,7 @@ func GetSMDSConfig() SMDSConfig {
 		} else {
 			//Need to generate configuration
 			curSMDSConfig = newDefaultConfig()
-			configFile, err := createSMDSConfigFile()
+			configFile, err := os.Create(configFilePath)
 			defer configFile.Close()
 			if err != nil {
 				panic(err)
@@ -86,31 +96,21 @@ func configFileExists() bool {
 	return !os.IsNotExist(err)
 }
 
-func getSMDSConfigFile() (io.ReadWriteCloser, error) {
-	return os.Open(configFilePath)
-}
-
-func createSMDSConfigFile() (io.ReadWriteCloser, error) {
-	return os.Create(configFilePath)
-}
+// func getSMDSConfigFile() (io.ReadWriteCloser, error) {
+// 	return os.OpenFile(configFilePath, os.O_RDWR|os.O_CREATE, 0755)
+// }
 
 func readSMDSConfigFromFile() *smdsConfig {
 	config := &smdsConfig{}
 
-	configFile, err := getSMDSConfigFile()
+	configFile, err := os.Open(configFilePath)
 	defer configFile.Close()
 
 	if err != nil {
 		panic(err)
 	}
 
-	configFileData, err := io.ReadAll(configFile)
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = json.Unmarshal(configFileData, config)
+	err = json.NewDecoder(configFile).Decode(config)
 
 	if err != nil {
 		panic(err)
