@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	spiClockSpeed   physic.Frequency = physic.KiloHertz * 10
-	spiBusDevPath   string           = "/dev/spidev0"
-	spiWriteDevPath string           = spiBusDevPath + ".0"
-	spiReadDevPath  string           = spiBusDevPath + ".1"
-	spiWriteMode    spi.Mode         = spi.Mode2
-	spiReadMode     spi.Mode         = spi.Mode2
-	spiBitsPerWord  int              = 8
+	spiClockSpeed  physic.Frequency = physic.KiloHertz * 10
+	spiBusDevPath  string           = "/dev/spidev0"
+	spiDevPath     string           = spiBusDevPath + ".0"
+	spiReadDevPath string           = spiBusDevPath + ".1"
+	spiWriteMode   spi.Mode         = spi.Mode2
+	spiReadMode    spi.Mode         = spi.Mode2
+	spiBitsPerWord int              = 8
 )
 
 type piTortoiseControllerDriver struct {
@@ -34,7 +34,7 @@ func init() {
 }
 
 func NewPiTortoiseControllerDriver() (piDriver hardware.SwitchMachineDriver, err error) {
-	return NewPiTortoiseControllerDriverWithSPIDevPath(spiBusDevPath)
+	return NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath)
 }
 
 func NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath string) (piDriver hardware.SwitchMachineDriver, err error) {
