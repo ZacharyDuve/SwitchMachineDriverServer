@@ -15,6 +15,7 @@ func NewSMDSApi() *smdsAPI {
 	api := &smdsAPI{}
 	api.router = mux.NewRouter()
 	handler.AddConfigHandlerToRouter(api.router)
+	handler.NewSwitchMachineHandler(api.router)
 	return api
 }
 
