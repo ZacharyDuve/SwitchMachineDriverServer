@@ -67,7 +67,7 @@ func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFu
 		}
 	}
 
-	return nil, clsFunc, initErr
+	return trxFunc, clsFunc, initErr
 }
 
 //PI SPI is MSB
