@@ -65,7 +65,7 @@ components:
           $ref: '#/components/schemas/GPIOState'
         gpio1:
           $ref: '#/components/schemas/GPIOState'
-    SwitchMachineUpdateRequest:
+    SwitchMachine:
       type: object
       properties:
         id:
