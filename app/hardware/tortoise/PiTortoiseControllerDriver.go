@@ -1,6 +1,8 @@
 package tortoise
 
 import (
+	"time"
+
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/conn/v3/spi"
@@ -9,20 +11,20 @@ import (
 )
 
 const (
-	spiClockSpeed  physic.Frequency = physic.KiloHertz * 10
-	spiBusDevPath  string           = "/dev/spidev0"
-	spiDevPath     string           = spiBusDevPath + ".0"
-	spiReadDevPath string           = spiBusDevPath + ".1"
-	spiWriteMode   spi.Mode         = spi.Mode2
-	spiReadMode    spi.Mode         = spi.Mode2
-	spiBitsPerWord int              = 8
+	spiClockSpeed     physic.Frequency = physic.KiloHertz * 10
+	spiBusDevPath     string           = "/dev/spidev0"
+	spiDevPath        string           = spiBusDevPath + ".0"
+	spiMode           spi.Mode         = spi.Mode2
+	spiBitsPerWord    int              = 8
+	busUpdateDuration time.Duration    = time.Millisecond * 200
 )
 
 type piTortoiseControllerDriver struct {
-	writeSPIPort spi.PortCloser
-	writeConn    spi.Conn
-	readSPIPort  spi.PortCloser
-	readConn     spi.Conn
+	writeSPIPort    spi.PortCloser
+	writeConn       spi.Conn
+	readSPIPort     spi.PortCloser
+	readConn        spi.Conn
+	busUpdateTicker *time.Ticker
 }
 
 func init() {
@@ -39,11 +41,18 @@ func NewPiTortoiseControllerDriver() (piDriver hardware.SwitchMachineDriver, err
 
 func NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath string) (piDriver hardware.SwitchMachineDriver, err error) {
 
+	ticker := time.NewTicker(busUpdateDuration)
+
 	var driver *baseTortoiseControllerDriver
 	trxFunc, closeFunc, err := setupConnections(spiDevPath)
 
+	piCloseFunc := func() (clsErr error) {
+		ticker.Stop()
+		return closeFunc()
+	}
+
 	if err == nil {
-		driver, err = newBaseTortiseControllerDriver(trxFunc, closeFunc)
+		driver, err = newBaseTortiseControllerDriver(trxFunc, piCloseFunc, ticker.C)
 	}
 	return driver, err
 }
@@ -57,7 +66,7 @@ func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFu
 	//Open port and connections
 	spiPort, initErr = spireg.Open(spiDevPath)
 	if initErr == nil {
-		spiConn, initErr = spiPort.Connect(spiClockSpeed, spiWriteMode, spiBitsPerWord)
+		spiConn, initErr = spiPort.Connect(spiClockSpeed, spiMode, spiBitsPerWord)
 
 		if initErr == nil {
 			clsFunc = func() error {

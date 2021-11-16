@@ -2,6 +2,7 @@ package tortoise
 
 import (
 	"testing"
+	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware"
 )
@@ -21,7 +22,7 @@ func TestBaseTortoiseControllerDriverImplementsTortoiseControllerDriver(t *testi
 
 //------------------------------------- newBaseTortoiseControllerDriver tests ---------------------------------
 func TestNewBaseControllerDriverReturnsErrorIfNoTRXFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(nil, noopCloseFunc)
+	_, err := newBaseTortiseControllerDriver(nil, noopCloseFunc, make(<-chan time.Time))
 
 	if err == nil {
 		t.Fail()
@@ -29,7 +30,15 @@ func TestNewBaseControllerDriverReturnsErrorIfNoTRXFuncProvided(t *testing.T) {
 }
 
 func TestNewBaseControllerDriverReturnsErrorIfNoCloseFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(noopTRXFunc, nil)
+	_, err := newBaseTortiseControllerDriver(noopTRXFunc, nil, make(<-chan time.Time))
+
+	if err == nil {
+		t.Fail()
+	}
+}
+
+func TestNewBaseControllerDriverReturnsErrorIfNoEventTriggerProvided(t *testing.T) {
+	_, err := newBaseTortiseControllerDriver(noopTRXFunc, noopCloseFunc, nil)
 
 	if err == nil {
 		t.Fail()
@@ -37,7 +46,7 @@ func TestNewBaseControllerDriverReturnsErrorIfNoCloseFuncProvided(t *testing.T) 
 }
 
 func TestNewBaseControllerDriverReturnsNoErrorIfTRXFuncAndCloseFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(noopTRXFunc, noopCloseFunc)
+	_, err := newBaseTortiseControllerDriver(noopTRXFunc, noopCloseFunc, make(<-chan time.Time))
 
 	if err != nil {
 		t.Fail()
@@ -51,7 +60,12 @@ func TestThatTRXFuncIsCalled(t *testing.T) {
 		calledTRXFuncChan <- true
 		return nil
 	}
-	newBaseTortiseControllerDriver(trxFunc, noopCloseFunc)
+
+	eventTrigger := make(chan time.Time)
+
+	newBaseTortiseControllerDriver(trxFunc, noopCloseFunc, eventTrigger)
+
+	eventTrigger <- time.Now()
 
 	<-calledTRXFuncChan
 }

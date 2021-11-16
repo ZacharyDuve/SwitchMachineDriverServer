@@ -64,24 +64,26 @@ type baseTortoiseControllerDriver struct {
 	processLoopExitChan chan bool
 	//Channel to take in new SwitchMachine States to be processed.
 	newSMStateChan chan hardware.SwitchMachineState
-	//Ticker that sends tick to update bus if needed - basically so not every event updates the bus and we don't constantly read from it
-	busUpdateTicker *time.Ticker
+	//Channel that triggers bus updates when value appears
+	busUpdateTrigger <-chan time.Time
 }
 
-func newBaseTortiseControllerDriver(trxFunc func(w, r []byte) error, clsFunc func() error) (driver *baseTortoiseControllerDriver, err error) {
+func newBaseTortiseControllerDriver(trxFunc func(w, r []byte) error, clsFunc func() error, bUT <-chan time.Time) (driver *baseTortoiseControllerDriver, err error) {
 	if trxFunc == nil {
 		err = errors.New("trxFunc is a required parameter for baseTortiseControllerDriver")
 	} else if clsFunc == nil {
 		err = errors.New("clsFunc is a required parameter for baseTortiseControllerDriver")
+	} else if bUT == nil {
+		err = errors.New("bUT is a required parameter for baseTortiseControllerDriver")
 	} else {
 		driver = &baseTortoiseControllerDriver{}
 		driver.initBuffers()
 		driver.initChans()
 		driver.attachedSwitchMachines = make(map[hardware.SwitchMachineId]*tortoiseSwitchMachine)
-		driver.busUpdateTicker = time.NewTicker(time.Millisecond * 200)
 
 		driver.txRxFunc = trxFunc
 		driver.closeFunc = clsFunc
+		driver.busUpdateTrigger = bUT
 
 		go driver.runLoop()
 	}
@@ -105,7 +107,7 @@ func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState hardware.
 }
 
 func (this *baseTortoiseControllerDriver) Close() error {
-	this.busUpdateTicker.Stop()
+	this.processLoopExitChan <- false
 	return this.closeFunc()
 }
 
@@ -126,7 +128,7 @@ func (this *baseTortoiseControllerDriver) runLoop() {
 		select {
 		case _ = <-this.processLoopExitChan:
 			return
-		case _ = <-this.busUpdateTicker.C:
+		case _ = <-this.busUpdateTrigger:
 			this.handleBusUpdate()
 		case newSMState := <-this.newSMStateChan:
 			this.processSMStateUpdate(newSMState)
