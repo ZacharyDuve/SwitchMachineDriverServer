@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
 )
 
 type bitOrder bool
@@ -52,10 +53,10 @@ const (
 )
 
 type baseTortoiseControllerDriver struct {
-	attachedSwitchMachines map[hardware.SwitchMachineId]*tortoiseSwitchMachine
-	txBuffer               []byte
-	prevRxBuffer           []byte
-	rxBuffer               []byte
+	smEventListener event.SwitchMachineEventListener
+	txBuffer        []byte
+	prevRxBuffer    []byte
+	rxBuffer        []byte
 	//Function that is attached that handles closing any connections in the implementing driver
 	closeFunc func() error
 	//Function that handles writing data to device while also reading data from it. Can return error if something goes wrong
@@ -63,12 +64,12 @@ type baseTortoiseControllerDriver struct {
 	//Channel to alert processLoop to exit
 	processLoopExitChan chan bool
 	//Channel to take in new SwitchMachine States to be processed.
-	newSMStateChan chan hardware.SwitchMachineState
+	newSMStateChan chan model.SwitchMachineState
 	//Channel that triggers bus updates when value appears
 	busUpdateTrigger <-chan time.Time
 }
 
-func newBaseTortiseControllerDriver(trxFunc func(w, r []byte) error, clsFunc func() error, bUT <-chan time.Time) (driver *baseTortoiseControllerDriver, err error) {
+func newBaseTortiseControllerDriver(trxFunc func(w, r []byte) error, clsFunc func() error, bUT <-chan time.Time, smEventListner event.SwitchMachineEventListener) (driver *baseTortoiseControllerDriver, err error) {
 	if trxFunc == nil {
 		err = errors.New("trxFunc is a required parameter for baseTortiseControllerDriver")
 	} else if clsFunc == nil {
@@ -79,7 +80,7 @@ func newBaseTortiseControllerDriver(trxFunc func(w, r []byte) error, clsFunc fun
 		driver = &baseTortoiseControllerDriver{}
 		driver.initBuffers()
 		driver.initChans()
-		driver.attachedSwitchMachines = make(map[hardware.SwitchMachineId]*tortoiseSwitchMachine)
+		driver.smEventListener = smEventListner
 
 		driver.txRxFunc = trxFunc
 		driver.closeFunc = clsFunc
@@ -95,7 +96,7 @@ func (this *baseTortoiseControllerDriver) GetNumberSwitchMachinesConnected() uin
 	return 0
 }
 
-func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState hardware.SwitchMachineState) error {
+func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState model.SwitchMachineState) error {
 	var err error
 	//Need to validate that there is even a switch machine there to perform update on
 	//if _, exists := this.attachedSwitchMachines[newState.Id()]; exists {
@@ -113,7 +114,7 @@ func (this *baseTortoiseControllerDriver) Close() error {
 
 func (this *baseTortoiseControllerDriver) initChans() {
 	this.processLoopExitChan = make(chan bool)
-	this.newSMStateChan = make(chan hardware.SwitchMachineState)
+	this.newSMStateChan = make(chan model.SwitchMachineState)
 }
 
 func (this *baseTortoiseControllerDriver) initBuffers() {
@@ -157,28 +158,35 @@ func (this *baseTortoiseControllerDriver) processRxBufferChanges() {
 				//If they are different then lets handle the change
 				if prevRxBits != curRxBits {
 
-					portNumber := calcPortNumFromByteIndexAndBitIndex(curIndex, bitIndex)
+					curId := model.SwitchMachineId(calcPortNumFromByteIndexAndBitIndex(curIndex, bitIndex))
+					attached := false
+					disconnected := false
 					//See if we changed from disconnected to connected
 					if prevRxBits == positionDisconnected {
-						attachedSM := &tortoiseSwitchMachine{}
-						attachedSM.id = hardware.SwitchMachineId(portNumber)
-						attachedSM.gpio0 = hardware.GPIOOFF
-						attachedSM.gpio1 = hardware.GPIOOFF
-						attachedSM.motorState = hardware.MotorStateIdle
-						this.attachedSwitchMachines[hardware.SwitchMachineId(portNumber)] = attachedSM
+						attached = true
 					}
-
-					curSM := this.attachedSwitchMachines[hardware.SwitchMachineId(portNumber)]
-
+					var position model.SwitchMachinePosition
 					if curRxBits == positionUnknown {
-						curSM.position = hardware.PositionUnknown
+						position = model.PositionUnknown
 					} else if curRxBits == position0 {
-						curSM.position = hardware.Position0
+						position = model.Position0
 					} else if curRxBits == position1 {
-						curSM.position = hardware.Position1
+						position = model.Position1
 					} else {
 						//We have become disconnected
-						delete(this.attachedSwitchMachines, hardware.SwitchMachineId(portNumber))
+						disconnected = true
+					}
+					if disconnected {
+						this.smEventListener.SwitchMachineRemoved(curId)
+					} else {
+						//TODO YEAH WE NEED TO CALCULATE THESE BAD BOIS of motor and GPIO states
+						state := model.NewSwitchMachineState(curId, position, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+
+						if attached {
+							this.smEventListener.SwitchMachineAdded(state)
+						} else {
+							this.smEventListener.SwitchMachineUpdated(state)
+						}
 					}
 				}
 			}
@@ -224,7 +232,7 @@ func (this *baseTortoiseControllerDriver) swapRxBuffers() {
 	this.rxBuffer = oldPrevRxBuff
 }
 
-func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState hardware.SwitchMachineState) {
+func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.SwitchMachineState) {
 	var txBits byte
 
 	if newState.GPIO0State() {
@@ -235,13 +243,13 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState hardware
 	}
 
 	switch newState.MotorState() {
-	case hardware.MotorStateIdle:
+	case model.MotorStateIdle:
 		txBits |= motorIdleBits
-	case hardware.MotorStateToPos0:
+	case model.MotorStateToPos0:
 		txBits |= motorToPos0Bits
-	case hardware.MotorStateToPos1:
+	case model.MotorStateToPos1:
 		txBits |= motorToPos1Bits
-	case hardware.MotorStateBrake:
+	case model.MotorStateBrake:
 		txBits |= motorBrakeBits
 	}
 	bitMask := dataBitMask
@@ -251,7 +259,7 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState hardware
 		bitMask = bitMask << 4
 	}
 
-	byteIndex := newState.Id() / hardware.SwitchMachineId(numTxPortsPerByte)
+	byteIndex := newState.Id() / model.SwitchMachineId(numTxPortsPerByte)
 
 	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & bitMask) | txBits
 }
@@ -264,7 +272,7 @@ func (this *MaxMainDriverBoardLimitExceededError) Error() string {
 }
 
 type TurnoutNotAvailableError struct {
-	id hardware.SwitchMachineId
+	id model.SwitchMachineId
 }
 
 func (this *TurnoutNotAvailableError) Error() string {

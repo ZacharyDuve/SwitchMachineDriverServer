@@ -1,4 +1,4 @@
-package hardware
+package model
 
 type SwitchMachineId uint16
 
@@ -66,4 +66,12 @@ func (this *switchMachineStateImpl) GPIO0State() GPIOState {
 
 func (this *switchMachineStateImpl) GPIO1State() GPIOState {
 	return this.gpio1
+}
+
+func SwitchMachineStatesEqual(sm1, sm2 SwitchMachineState) bool {
+	return sm1.Id() == sm2.Id() &&
+		sm1.GPIO0State() == sm2.GPIO0State() &&
+		sm1.GPIO1State() == sm2.GPIO1State() &&
+		sm1.MotorState() == sm2.MotorState() &&
+		sm1.Position() == sm2.Position()
 }

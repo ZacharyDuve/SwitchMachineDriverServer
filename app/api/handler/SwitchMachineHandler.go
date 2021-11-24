@@ -5,13 +5,12 @@ import (
 	"net/http"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware/tortoise"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
 	"github.com/gorilla/mux"
 )
 
 type switchMachineHandler struct {
-	driver hardware.SwitchMachineDriver
+	controller controller.TortoiseController
 }
 
 func NewSwitchMachineHandler(rtr *mux.Router) {
@@ -20,12 +19,7 @@ func NewSwitchMachineHandler(rtr *mux.Router) {
 
 	//subRtr.Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachines)
 	subRtr.Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachine)
-	var err error
-	smHandler.driver, err = tortoise.NewPiTortoiseControllerDriver()
-
-	if err != nil {
-		panic(err)
-	}
+	smHandler.controller = controller.NewTortoiseController()
 }
 
 func (this *switchMachineHandler) handleGetSwitchMachines(w http.ResponseWriter, r *http.Request) {
@@ -42,5 +36,5 @@ func (this *switchMachineHandler) handleUpdateSwitchMachine(w http.ResponseWrite
 		return
 	}
 
-	this.driver.UpdateSwitchMachine(sm)
+	this.controller.UpdateSwitchMachine(sm)
 }

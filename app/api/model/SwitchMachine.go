@@ -1,6 +1,6 @@
 package model
 
-import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware"
+import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
 
 type SwitchMachine struct {
 	SMId int `json:"id,omitempty"`
@@ -12,34 +12,30 @@ type SwitchMachine struct {
 	Gpio1 GpioState `json:"gpio1,omitempty"`
 }
 
-func (this *SwitchMachine) Id() hardware.SwitchMachineId {
-	return hardware.SwitchMachineId(this.SMId)
+func (this *SwitchMachine) Id() model.SwitchMachineId {
+	return model.SwitchMachineId(this.SMId)
 }
 
-func (this *SwitchMachine) Position() hardware.SwitchMachinePosition {
+func (this *SwitchMachine) Position() model.SwitchMachinePosition {
 	if this.Pos == Position0 {
-		return hardware.Position0
+		return model.Position0
 	} else {
-		return hardware.Position1
+		return model.Position1
 	}
 }
 
-func (this *SwitchMachine) MotorState() hardware.SwitchMachineMotorState {
-	return hardware.MotorStateIdle
-}
-
-func (this *SwitchMachine) GPIO0State() hardware.GPIOState {
+func (this *SwitchMachine) GPIO0State() model.GPIOState {
 	return mapAPIGPIOStateToHardwareState(this.Gpio0)
 }
 
-func (this *SwitchMachine) GPIO1State() hardware.GPIOState {
+func (this *SwitchMachine) GPIO1State() model.GPIOState {
 	return mapAPIGPIOStateToHardwareState(this.Gpio1)
 }
 
-func mapAPIGPIOStateToHardwareState(apiState GpioState) hardware.GPIOState {
+func mapAPIGPIOStateToHardwareState(apiState GpioState) model.GPIOState {
 	if apiState == ON {
-		return hardware.GPIOOn
+		return model.GPIOOn
 	} else {
-		return hardware.GPIOOFF
+		return model.GPIOOFF
 	}
 }

@@ -3,7 +3,8 @@ package tortoise
 import (
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/conn/v3/spi"
 	"periph.io/x/conn/v3/spi/spireg"
@@ -35,24 +36,24 @@ func init() {
 	}
 }
 
-func NewPiTortoiseControllerDriver() (piDriver hardware.SwitchMachineDriver, err error) {
-	return NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath)
+func NewPiTortoiseControllerDriver(smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
+	return NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath, smEventListener)
 }
 
-func NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath string) (piDriver hardware.SwitchMachineDriver, err error) {
+func NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath string, smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
 
 	ticker := time.NewTicker(busUpdateDuration)
 
 	var driver *baseTortoiseControllerDriver
 	trxFunc, closeFunc, err := setupConnections(spiDevPath)
 
-	piCloseFunc := func() (clsErr error) {
-		ticker.Stop()
-		return closeFunc()
-	}
-
 	if err == nil {
-		driver, err = newBaseTortiseControllerDriver(trxFunc, piCloseFunc, ticker.C)
+		piCloseFunc := func() (clsErr error) {
+			ticker.Stop()
+			return closeFunc()
+		}
+
+		driver, err = newBaseTortiseControllerDriver(trxFunc, piCloseFunc, ticker.C, smEventListener)
 	}
 	return driver, err
 }
@@ -69,36 +70,10 @@ func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFu
 		spiConn, initErr = spiPort.Connect(spiClockSpeed, spiMode, spiBitsPerWord)
 
 		if initErr == nil {
-			clsFunc = func() error {
-				return spiPort.Close()
-			}
+			clsFunc = spiPort.Close
 			trxFunc = spiConn.Tx
 		}
 	}
 
 	return trxFunc, clsFunc, initErr
 }
-
-//PI SPI is MSB
-
-// type turnout struct {
-// 	id uint
-// 	currentPos TurnoutPosition
-// 	currentDriveState driveState
-// 	gpio0 bool
-// 	gpio1 bool
-// }
-
-// type turnout struct {
-// 	id         TurnoutID
-// 	motorState      byte
-// 	currentPos TurnoutPosition
-// 	gpio0      GPIOState
-// 	gpio1      GPIOState
-// 	//Byte that could be written out spi, saved so we don't have to recalculate it everytime
-// 	dataByte byte
-// }
-
-// func (this *turnout) GetDataByte() byte {
-
-// }
