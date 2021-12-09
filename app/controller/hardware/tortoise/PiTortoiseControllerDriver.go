@@ -1,6 +1,7 @@
 package tortoise
 
 import (
+	"log"
 	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
@@ -40,13 +41,13 @@ func NewPiTortoiseControllerDriver(smEventListener event.SwitchMachineEventListe
 	return NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath, smEventListener)
 }
 
-func NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath string, smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
-
+func NewPiTortoiseControllerDriverWithSPIDevPath(sDevPath string, smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
+	log.Println("NewPiTortoiseControllerDriverWithSPIDevPath called")
 	ticker := time.NewTicker(busUpdateDuration)
 
 	var driver *baseTortoiseControllerDriver
-	trxFunc, closeFunc, err := setupConnections(spiDevPath)
-
+	trxFunc, closeFunc, err := setupConnections(sDevPath)
+	log.Println("SPI connections setup. Errored:", err)
 	if err == nil {
 		piCloseFunc := func() (clsErr error) {
 			ticker.Stop()
@@ -59,6 +60,7 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath string, smEventListe
 }
 
 func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFunc func() error, err error) {
+	log.Println("Setting up connection to:", spiDevPath)
 	var initErr error
 
 	var spiPort spi.PortCloser
