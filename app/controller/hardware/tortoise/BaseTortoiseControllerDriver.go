@@ -131,7 +131,8 @@ func (this *baseTortoiseControllerDriver) initChans() {
 func (this *baseTortoiseControllerDriver) initBuffers() {
 	this.txBuffer = make([]byte, MaxNumberAttachableMainControllerBoards*numTxBytesPerBoard)
 
-	this.rxBuffer = make([]byte, MaxNumberAttachableMainControllerBoards*numRxBytesPerBoard)
+	//this.rxBuffer = make([]byte, MaxNumberAttachableMainControllerBoards*numRxBytesPerBoard)
+	this.rxBuffer = make([]byte, len(this.txBuffer))
 	this.prevRxBuffer = make([]byte, len(this.rxBuffer))
 }
 
