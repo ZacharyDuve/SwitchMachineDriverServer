@@ -17,7 +17,7 @@ const (
 	spiDevPath        string           = spiBusDevPath + ".0"
 	spiMode           spi.Mode         = spi.Mode2
 	spiBitsPerWord    int              = 8
-	busUpdateDuration time.Duration    = time.Millisecond * 200
+	busUpdateDuration time.Duration    = time.Millisecond * 100
 )
 
 type piTortoiseControllerDriver struct {

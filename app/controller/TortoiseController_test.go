@@ -33,9 +33,8 @@ func TestUpdateSwitchMachineDoesNotCallDriverUpdateSwitchMachineIfSwitchMachineD
 
 	wasDriverUpdateCalled := false
 	driver := &mockHardwareDriver{}
-	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) error {
+	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) {
 		wasDriverUpdateCalled = true
-		return nil
 	}
 	c.driver = driver
 
@@ -52,9 +51,8 @@ func TestUpdateSwitchMachineDoesNotCallDriverIfNewStateHasPositionAndGPIOEqualTo
 
 	wasDriverUpdateCalled := false
 	driver := &mockHardwareDriver{}
-	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) error {
+	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) {
 		wasDriverUpdateCalled = true
-		return nil
 	}
 	c.driver = driver
 	idUnderTest := model.SwitchMachineId(1)
@@ -78,9 +76,8 @@ func TestUpdateSwitchMachineDoesNotCallDriverIfNewStateHasPositionAndGPIOEqualTo
 
 	wasDriverUpdateCalled := false
 	driver := &mockHardwareDriver{}
-	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) error {
+	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) {
 		wasDriverUpdateCalled = true
-		return nil
 	}
 	c.driver = driver
 	idUnderTest := model.SwitchMachineId(1)
@@ -104,9 +101,8 @@ func TestUpdateSwitchMachineCallsDriverIfNewStateHasPositionAndGPIOEqualToExisti
 
 	wasDriverUpdateCalled := false
 	driver := &mockHardwareDriver{}
-	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) error {
+	driver.updateSwitchMachineFunc = func(sms model.SwitchMachineState) {
 		wasDriverUpdateCalled = true
-		return nil
 	}
 	c.driver = driver
 	idUnderTest := model.SwitchMachineId(1)
@@ -152,15 +148,14 @@ func TestIsMotorRunningToOpposingPositionReturnsFalseIfExistingHasMotorRunningTo
 }
 
 type mockHardwareDriver struct {
-	updateSwitchMachineFunc func(model.SwitchMachineState) error
+	updateSwitchMachineFunc func(model.SwitchMachineState)
 	closeFunc               func() error
 }
 
-func (this *mockHardwareDriver) UpdateSwitchMachine(sm model.SwitchMachineState) error {
+func (this *mockHardwareDriver) UpdateSwitchMachine(sm model.SwitchMachineState) {
 	if this.updateSwitchMachineFunc != nil {
-		return this.updateSwitchMachineFunc(sm)
+		this.updateSwitchMachineFunc(sm)
 	}
-	return nil
 }
 
 func (this *mockHardwareDriver) Close() error {

@@ -3,6 +3,7 @@ package tortoise
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
@@ -27,6 +28,23 @@ const (
 	//DefaultThrowTime is the default time that tortoise driver board will active the motor for to throw a turnout
 	DefaultThrowTime time.Duration = time.Second * 2
 
+	numBitsPerPort uint = 2
+
+	port0RxBitMask   byte = 0x30
+	port0RxBitIndex  uint = 2
+	port0RxBitOffset uint = port0RxBitIndex * numBitsPerPort
+
+	port1RxBitMask   byte = 0x0C
+	port1RxBitIndex  uint = 1
+	port1RxBitOffset uint = port1RxBitIndex * numBitsPerPort
+
+	port2RxBitMask   byte = 0x03
+	port2RxBitIndex  uint = 0
+	port2RxBitOffset uint = port2RxBitIndex * numBitsPerPort
+
+	port3RxBitMask   byte = 0xC0
+	port3RxBitIndex  uint = 3
+	port3RxBitOffset uint = port3RxBitIndex * numBitsPerPort
 	//msbFirst
 	msbFirst bitOrder = false
 	lsbFirst bitOrder = true
@@ -96,15 +114,8 @@ func (this *baseTortoiseControllerDriver) GetNumberSwitchMachinesConnected() uin
 	return 0
 }
 
-func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState model.SwitchMachineState) error {
-	var err error
-	//Need to validate that there is even a switch machine there to perform update on
-	//if _, exists := this.attachedSwitchMachines[newState.Id()]; exists {
+func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState model.SwitchMachineState) {
 	this.newSMStateChan <- newState
-	//} else {
-	//	err = &TurnoutNotAvailableError{id: newState.Id()}
-	//}
-	return err
 }
 
 func (this *baseTortoiseControllerDriver) Close() error {
@@ -140,10 +151,10 @@ func (this *baseTortoiseControllerDriver) runLoop() {
 func (this *baseTortoiseControllerDriver) handleBusUpdate() {
 	this.txRxFunc(this.txBuffer, this.rxBuffer)
 	//Figure out what changed
-	//this.processRxBufferChanges()
+	this.processRxBufferChanges()
 
 	//We need to swap rx buffers so cur becomes prev and we can reuse old prev for next read since it completely overwrites
-	//this.swapRxBuffers()
+	this.swapRxBuffers()
 }
 
 func (this *baseTortoiseControllerDriver) processRxBufferChanges() {
@@ -151,79 +162,78 @@ func (this *baseTortoiseControllerDriver) processRxBufferChanges() {
 		prevRxByte := this.prevRxBuffer[curIndex]
 		//If the bytes are not equal then something changed
 		if prevRxByte != curRxByte {
-			for bitIndex := 0; bitIndex < int(numRxPortsPerByte); bitIndex++ {
-				//Mask off the bits so we only get one port worth of data
-				prevRxBits := prevRxByte & dataBitMask
-				curRxBits := curRxByte & dataBitMask
-				//If they are different then lets handle the change
-				if prevRxBits != curRxBits {
+			this.handleRXByteChange(prevRxByte, curRxByte, curIndex)
+		}
+	}
+}
 
-					curId := model.SwitchMachineId(calcPortNumFromByteIndexAndBitIndex(curIndex, bitIndex))
-					attached := false
-					disconnected := false
-					//See if we changed from disconnected to connected
-					if prevRxBits == positionDisconnected {
-						attached = true
-					}
-					var position model.SwitchMachinePosition
-					if curRxBits == positionUnknown {
-						position = model.PositionUnknown
-					} else if curRxBits == position0 {
-						position = model.Position0
-					} else if curRxBits == position1 {
-						position = model.Position1
-					} else {
-						//We have become disconnected
-						disconnected = true
-					}
-					if disconnected {
-						this.smEventListener.SwitchMachineRemoved(curId)
-					} else {
-						//TODO YEAH WE NEED TO CALCULATE THESE BAD BOIS of motor and GPIO states
-						state := model.NewSwitchMachineState(curId, position, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+func (this *baseTortoiseControllerDriver) handleRXByteChange(prevRxByte, curRxByte byte, byteIndex int) {
+	for portNumber := 0; portNumber < int(numRxPortsPerByte); portNumber++ {
+		//Mask off the bits so we only get one port worth of data
+		prevRxBits := getRxBitsForPortNumber(prevRxByte, portNumber)
+		curRxBits := getRxBitsForPortNumber(curRxByte, portNumber)
+		//If they are different then lets handle the change
+		if prevRxBits != curRxBits {
+			log.Println("Bytes don't match need to figure out what changed", prevRxBits, " ", curRxBits)
 
-						if attached {
-							this.smEventListener.SwitchMachineAdded(state)
-						} else {
-							this.smEventListener.SwitchMachineUpdated(state)
-						}
-					}
+			curSMId := model.SwitchMachineId(portNumber)
+			wasAttached := isConnectedFromPositionBits(prevRxBits)
+			isAttached := isConnectedFromPositionBits(curRxBits)
+
+			log.Printf("curSMId:", curSMId, "wasAttached:", wasAttached, "isAttached", isAttached)
+			//We know we are removed
+			if wasAttached && !isAttached {
+				this.smEventListener.SwitchMachineRemoved(curSMId)
+			} else {
+				position := getSMPositionFromRxBits(curRxBits)
+
+				state := model.NewSwitchMachineState(curSMId, position, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+
+				if !wasAttached {
+					this.smEventListener.SwitchMachineAdded(state)
+				} else {
+					this.smEventListener.SwitchMachineUpdated(state)
 				}
 			}
+
 		}
 	}
 }
 
-func calcPortNumFromByteIndexAndBitIndex(byteIndex, bitIndex int) int {
-	var portNum int
-
-	if bitIndex >= int(numRxPortsPerByte) {
-		panic(errors.New("Unable to calc port as bit index is impossible value"))
+func getRxBitsForPortNumber(rxByte byte, portNum int) byte {
+	var rxBits byte
+	switch portNum {
+	case 0:
+		rxBits = (rxByte & port0RxBitMask) >> byte(port0RxBitOffset)
+	case 1:
+		rxBits = (rxByte & port1RxBitMask) >> byte(port1RxBitOffset)
+	case 2:
+		rxBits = (rxByte & port2RxBitMask) >> byte(port2RxBitOffset)
+	case 3:
+		rxBits = (rxByte & port3RxBitMask) >> byte(port3RxBitOffset)
+	default:
+		panic("Invalid Port number")
 	}
 
-	if bitIndex == 0 {
-		portNum = 2
-	} else if bitIndex == 1 {
-		portNum = 1
-	} else if bitIndex == 2 {
-		portNum = 0
-	} else if bitIndex == 3 {
-		portNum = 3
-	}
-
-	return portNum + byteIndex*int(numRxPortsPerByte)
+	return rxBits
 }
 
-func (this *baseTortoiseControllerDriver) isUpdateInRxBuffers() bool {
-	var updateOccured bool
-	for curIndex, curByte := range this.rxBuffer {
-		if curByte != this.prevRxBuffer[curIndex] {
-			updateOccured = true
-			break
-		}
+func getSMPositionFromRxBits(rxBits byte) model.SwitchMachinePosition {
+	var position model.SwitchMachinePosition
+	if rxBits == positionUnknown {
+		position = model.PositionUnknown
+	} else if rxBits == position0 {
+		position = model.Position0
+	} else if rxBits == position1 {
+		position = model.Position1
+	} else {
+		panic("Switch Machine is disconnected cant tell position")
 	}
+	return position
+}
 
-	return updateOccured
+func isConnectedFromPositionBits(posBits byte) bool {
+	return posBits != positionDisconnected
 }
 
 func (this *baseTortoiseControllerDriver) swapRxBuffers() {
@@ -233,6 +243,7 @@ func (this *baseTortoiseControllerDriver) swapRxBuffers() {
 }
 
 func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.SwitchMachineState) {
+	log.Println("Getting update", newState)
 	var txBits byte
 
 	if newState.GPIO0State() {
@@ -259,9 +270,10 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.Sw
 		bitMask = bitMask << 4
 	}
 
-	byteIndex := newState.Id() / model.SwitchMachineId(numTxPortsPerByte)
+	byteIndex := uint(newState.Id()) / numTxPortsPerByte
 
-	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & bitMask) | txBits
+	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & ^bitMask) | txBits
+	log.Println("this.txBuffer", this.txBuffer, "byteIndex", byteIndex, "bitMask", bitMask, "txBits", txBits)
 }
 
 type MaxMainDriverBoardLimitExceededError struct {

@@ -7,6 +7,6 @@ import (
 )
 
 type SwitchMachineDriver interface {
-	UpdateSwitchMachine(model.SwitchMachineState) error
+	UpdateSwitchMachine(model.SwitchMachineState)
 	io.Closer
 }

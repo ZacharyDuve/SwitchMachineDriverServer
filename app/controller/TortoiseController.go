@@ -2,7 +2,8 @@ package controller
 
 import (
 	"errors"
-	"os"
+	"log"
+	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware/tortoise"
@@ -11,7 +12,8 @@ import (
 )
 
 const (
-	switchMachineNotExistErrorMessage string = "Switch Machine with matching Id does not exist"
+	switchMachineNotExistErrorMessage string        = "Switch Machine with matching Id does not exist"
+	defaultMotorRunTime               time.Duration = time.Second * 4
 )
 
 type TortoiseController interface {
@@ -25,23 +27,33 @@ type tortoiseControllerImpl struct {
 
 //Wrapping the internal testable call as an external facing interface to restrict functions
 func NewTortoiseController() TortoiseController {
-	return newTortoiseController()
+	controller := newTortoiseController()
+	var err error
+	controller.driver, err = tortoise.NewPiTortoiseControllerDriver(controller)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return controller
+}
+
+func NewTortoiseControllerWithMockDriver(txDataOut, rxDataIn []byte) TortoiseController {
+	controller := newTortoiseController()
+	var err error
+	controller.driver, err = tortoise.NewMockTortoiseControllerDriver(controller, txDataOut, rxDataIn)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return controller
 }
 
 //Function that returns a *tortoiseControllerImpl so that we can use its functions in tests
 func newTortoiseController() *tortoiseControllerImpl {
 	controller := &tortoiseControllerImpl{}
 	controller.existingSMStates = persistance.NewSwitchMachineStore()
-	var err error
-	if os.Getenv("environment") == "production" {
-		controller.driver, err = tortoise.NewPiTortoiseControllerDriver(controller)
-	} else {
-		controller.driver, err = tortoise.NewMockTortoiseControllerDriver(controller)
-	}
-
-	if err != nil {
-		panic(err)
-	}
 
 	return controller
 }
@@ -52,14 +64,30 @@ func (this *tortoiseControllerImpl) UpdateSwitchMachine(req SwitchMachineUpdateR
 	if !this.existingSMStates.HasSwitchMachine(req.Id()) {
 		err = errors.New(switchMachineNotExistErrorMessage)
 	} else {
-		curSMState := this.existingSMStates.GetSwitchMachineById(req.Id())
-		if isMotorRunningToOpposingPosition(curSMState, req) {
+		//curSMState := this.existingSMStates.GetSwitchMachineById(req.Id())
+		//if isMotorRunningToOpposingPosition(curSMState, req) {
+		if true {
 			newState := createNewStateFromRequest(req)
 			this.driver.UpdateSwitchMachine(newState)
+			this.createStopMotorCallback(newState.Id())
 		}
 	}
 
 	return err
+}
+
+func (this *tortoiseControllerImpl) createStopMotorCallback(id model.SwitchMachineId) {
+	go func() {
+		time.Sleep(defaultMotorRunTime)
+		stateBeforeMotorStop := this.existingSMStates.GetSwitchMachineById(id)
+		stoppedMotorState := model.NewSwitchMachineState(id,
+			stateBeforeMotorStop.Position(),
+			model.MotorStateIdle,
+			stateBeforeMotorStop.GPIO0State(),
+			stateBeforeMotorStop.GPIO1State())
+		log.Println("Stopping motor with id:", id)
+		this.driver.UpdateSwitchMachine(stoppedMotorState)
+	}()
 }
 
 func isMotorRunningToOpposingPosition(existingState model.SwitchMachineState, req SwitchMachineUpdateRequest) bool {
@@ -101,4 +129,8 @@ func (this *tortoiseControllerImpl) SwitchMachineRemoved(smId model.SwitchMachin
 	if err != nil {
 		panic(err)
 	}
+}
+
+func IsSwitchMachineNotExistError(err error) bool {
+	return err.Error() == switchMachineNotExistErrorMessage
 }
