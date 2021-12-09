@@ -149,6 +149,7 @@ func (this *baseTortoiseControllerDriver) runLoop() {
 }
 
 func (this *baseTortoiseControllerDriver) handleBusUpdate() {
+	log.Println("Handling the bus update")
 	this.txRxFunc(this.txBuffer, this.rxBuffer)
 	//Figure out what changed
 	this.processRxBufferChanges()
@@ -180,7 +181,7 @@ func (this *baseTortoiseControllerDriver) handleRXByteChange(prevRxByte, curRxBy
 			wasAttached := isConnectedFromPositionBits(prevRxBits)
 			isAttached := isConnectedFromPositionBits(curRxBits)
 
-			log.Printf("curSMId:", curSMId, "wasAttached:", wasAttached, "isAttached", isAttached)
+			log.Println("curSMId:", curSMId, "wasAttached:", wasAttached, "isAttached", isAttached)
 			//We know we are removed
 			if wasAttached && !isAttached {
 				this.smEventListener.SwitchMachineRemoved(curSMId)
