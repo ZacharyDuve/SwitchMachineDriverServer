@@ -69,9 +69,11 @@ func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFu
 	//Open port and connections
 	spiPort, initErr = spireg.Open(spiDevPath)
 	if initErr == nil {
+		log.Println("Going to start opening connection")
 		spiConn, initErr = spiPort.Connect(spiClockSpeed, spiMode, spiBitsPerWord)
-
+		log.Println("Should have opened spi port")
 		if initErr == nil {
+			log.Println("Binding close and trx functions")
 			clsFunc = spiPort.Close
 			trxFunc = spiConn.Tx
 		}
