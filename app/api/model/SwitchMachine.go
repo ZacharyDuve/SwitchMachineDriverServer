@@ -12,6 +12,15 @@ type SwitchMachine struct {
 	Gpio1 GpioState `json:"gpio1,omitempty"`
 }
 
+func NewAPISwitchMachineFromModel(modelSM model.SwitchMachineState) *SwitchMachine {
+	apiSM := &SwitchMachine{}
+	apiSM.SMId = int(modelSM.Id())
+	apiSM.Pos = mapModelPosToApiPos(modelSM.Position())
+	apiSM.Gpio0 = mapModelGPIOToAPI(modelSM.GPIO0State())
+	apiSM.Gpio1 = mapModelGPIOToAPI(modelSM.GPIO1State())
+	return apiSM
+}
+
 func (this *SwitchMachine) Id() model.SwitchMachineId {
 	return model.SwitchMachineId(this.SMId)
 }
