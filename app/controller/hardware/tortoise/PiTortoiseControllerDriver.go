@@ -20,7 +20,7 @@ const (
 	spiTxMode         spi.Mode         = spi.Mode2
 	spiRxMode         spi.Mode         = spi.Mode0
 	spiBitsPerWord    int              = 8
-	busUpdateDuration time.Duration    = time.Millisecond * 2000
+	busUpdateDuration time.Duration    = time.Millisecond * 100
 )
 
 type piTortoiseControllerDriver struct {
