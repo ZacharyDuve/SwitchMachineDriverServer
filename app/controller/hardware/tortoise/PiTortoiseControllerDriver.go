@@ -13,14 +13,14 @@ import (
 )
 
 const (
-	spiClockSpeed     physic.Frequency = physic.Hertz * 10
+	spiClockSpeed     physic.Frequency = physic.Hertz * 100
 	spiBusDevPath     string           = "/dev/spidev0"
 	spiTxDevPath      string           = spiBusDevPath + ".0"
 	spiRxDevPath      string           = spiBusDevPath + ".1"
 	spiTxMode         spi.Mode         = spi.Mode2
 	spiRxMode         spi.Mode         = spi.Mode0
 	spiBitsPerWord    int              = 8
-	busUpdateDuration time.Duration    = time.Second * 100
+	busUpdateDuration time.Duration    = time.Second * 5
 )
 
 type piTortoiseControllerDriver struct {
