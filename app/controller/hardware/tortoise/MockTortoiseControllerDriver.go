@@ -1,8 +1,6 @@
 package tortoise
 
 import (
-	"encoding/hex"
-	"fmt"
 	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
@@ -15,12 +13,19 @@ func NewMockTortoiseControllerDriver(smEventListener event.SwitchMachineEventLis
 		ticker.Stop()
 		return nil
 	}
-	driver, err := newBaseTortiseControllerDriver(func(w, r []byte) error {
-		fmt.Println(hex.EncodeToString(w))
+
+	txFunc := func(w, r []byte) error {
+		//fmt.Println(hex.EncodeToString(w))
 		copy(txDataOut, w)
+		return nil
+	}
+
+	rxFunc := func(w, r []byte) error {
+		//fmt.Println(hex.EncodeToString(w))
 		copy(r, rxDataIn)
 		return nil
-	}, clsFunc, ticker.C, smEventListener)
+	}
+	driver, err := newBaseTortiseControllerDriver(txFunc, rxFunc, clsFunc, ticker.C, smEventListener)
 
 	return driver, err
 }

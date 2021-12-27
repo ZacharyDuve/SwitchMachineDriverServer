@@ -73,36 +73,42 @@ const (
 type baseTortoiseControllerDriver struct {
 	smEventListener event.SwitchMachineEventListener
 	txBuffer        []byte
+	txWasteRxBuffer []byte
 	prevRxBuffer    []byte
 	rxBuffer        []byte
+	rxWasteTxBuffer []byte
 	//Function that is attached that handles closing any connections in the implementing driver
 	closeFunc func() error
 	//Function that handles writing data to device while also reading data from it. Can return error if something goes wrong
-	txRxFunc func(w, r []byte) error
+	txFunc func(w, r []byte) error
+	rxFunc func(w, r []byte) error
 	//Channel to alert processLoop to exit
 	processLoopExitChan chan bool
 	//Channel to take in new SwitchMachine States to be processed.
 	newSMStateChan chan model.SwitchMachineState
 	//Channel that triggers bus updates when value appears
-	busUpdateTrigger <-chan time.Time
+	rxTrigger <-chan time.Time
 }
 
-func newBaseTortiseControllerDriver(trxFunc func(w, r []byte) error, clsFunc func() error, bUT <-chan time.Time, smEventListner event.SwitchMachineEventListener) (driver *baseTortoiseControllerDriver, err error) {
-	if trxFunc == nil {
-		err = errors.New("trxFunc is a required parameter for baseTortiseControllerDriver")
+func newBaseTortiseControllerDriver(txFunc, rxFunc func(w, r []byte) error, clsFunc func() error, rxTrigger <-chan time.Time, smEventListner event.SwitchMachineEventListener) (driver *baseTortoiseControllerDriver, err error) {
+	if txFunc == nil {
+		err = errors.New("txFunc is a required parameter for baseTortiseControllerDriver")
+	} else if rxFunc == nil {
+		err = errors.New("rxFunc is a required parameter for baseTortiseControllerDriver")
 	} else if clsFunc == nil {
 		err = errors.New("clsFunc is a required parameter for baseTortiseControllerDriver")
-	} else if bUT == nil {
-		err = errors.New("bUT is a required parameter for baseTortiseControllerDriver")
+	} else if rxTrigger == nil {
+		err = errors.New("rxTrigger is a required parameter for baseTortiseControllerDriver")
 	} else {
 		driver = &baseTortoiseControllerDriver{}
 		driver.initBuffers()
 		driver.initChans()
 		driver.smEventListener = smEventListner
 
-		driver.txRxFunc = trxFunc
+		driver.txFunc = txFunc
+		driver.rxFunc = rxFunc
 		driver.closeFunc = clsFunc
-		driver.busUpdateTrigger = bUT
+		driver.rxTrigger = rxTrigger
 
 		go driver.runLoop()
 	}
@@ -130,10 +136,11 @@ func (this *baseTortoiseControllerDriver) initChans() {
 
 func (this *baseTortoiseControllerDriver) initBuffers() {
 	this.txBuffer = make([]byte, MaxNumberAttachableMainControllerBoards*numTxBytesPerBoard)
+	this.txWasteRxBuffer = make([]byte, len(this.txBuffer))
 
-	//this.rxBuffer = make([]byte, MaxNumberAttachableMainControllerBoards*numRxBytesPerBoard)
-	this.rxBuffer = make([]byte, len(this.txBuffer))
+	this.rxBuffer = make([]byte, MaxNumberAttachableMainControllerBoards*numRxBytesPerBoard)
 	this.prevRxBuffer = make([]byte, len(this.rxBuffer))
+	this.rxWasteTxBuffer = make([]byte, len(this.rxBuffer))
 }
 
 func (this *baseTortoiseControllerDriver) runLoop() {
@@ -141,17 +148,21 @@ func (this *baseTortoiseControllerDriver) runLoop() {
 		select {
 		case _ = <-this.processLoopExitChan:
 			return
-		case _ = <-this.busUpdateTrigger:
-			this.handleBusUpdate()
+		case _ = <-this.rxTrigger:
+			this.handleBusRead()
 		case newSMState := <-this.newSMStateChan:
 			this.processSMStateUpdate(newSMState)
 		}
 	}
 }
 
-func (this *baseTortoiseControllerDriver) handleBusUpdate() {
-	log.Println("Handling the bus update")
-	this.txRxFunc(this.txBuffer, this.rxBuffer)
+func (this *baseTortoiseControllerDriver) handleBusWrite() {
+	this.txFunc(this.txBuffer, this.txWasteRxBuffer)
+}
+
+func (this *baseTortoiseControllerDriver) handleBusRead() {
+	log.Println("Handling the bus read")
+	this.rxFunc(this.rxWasteTxBuffer, this.rxBuffer)
 	//Figure out what changed
 	this.processRxBufferChanges()
 
@@ -275,6 +286,7 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.Sw
 	byteIndex := uint(newState.Id()) / numTxPortsPerByte
 
 	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & ^bitMask) | txBits
+	this.handleBusWrite()
 	log.Println("this.txBuffer", this.txBuffer, "byteIndex", byteIndex, "bitMask", bitMask, "txBits", txBits)
 }
 

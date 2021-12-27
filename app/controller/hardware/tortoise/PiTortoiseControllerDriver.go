@@ -15,10 +15,12 @@ import (
 const (
 	spiClockSpeed     physic.Frequency = physic.KiloHertz * 10
 	spiBusDevPath     string           = "/dev/spidev0"
-	spiDevPath        string           = spiBusDevPath + ".0"
-	spiMode           spi.Mode         = spi.Mode2
+	spiTxDevPath      string           = spiBusDevPath + ".0"
+	spiRxDevPath      string           = spiBusDevPath + ".1"
+	spiTxMode         spi.Mode         = spi.Mode2
+	spiRxMode         spi.Mode         = spi.Mode0
 	spiBitsPerWord    int              = 8
-	busUpdateDuration time.Duration    = time.Millisecond * 100
+	busUpdateDuration time.Duration    = time.Millisecond * 2000
 )
 
 type piTortoiseControllerDriver struct {
@@ -38,28 +40,35 @@ func init() {
 }
 
 func NewPiTortoiseControllerDriver(smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
-	return NewPiTortoiseControllerDriverWithSPIDevPath(spiDevPath, smEventListener)
+	return NewPiTortoiseControllerDriverWithSPIDevPath(spiTxDevPath, spiRxDevPath, smEventListener)
 }
 
-func NewPiTortoiseControllerDriverWithSPIDevPath(sDevPath string, smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
+func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, smEventListener event.SwitchMachineEventListener) (hardware.SwitchMachineDriver, error) {
 	log.Println("NewPiTortoiseControllerDriverWithSPIDevPath called")
 	ticker := time.NewTicker(busUpdateDuration)
 
-	var driver *baseTortoiseControllerDriver
-	trxFunc, closeFunc, err := setupConnections(sDevPath)
-	log.Println("SPI connections setup. Errored:", err)
-	if err == nil {
-		piCloseFunc := func() (clsErr error) {
-			ticker.Stop()
-			return closeFunc()
-		}
-
-		driver, err = newBaseTortiseControllerDriver(trxFunc, piCloseFunc, ticker.C, smEventListener)
+	txFunc, txCloseFunc, txOpenErr := setupConnections(txDevPath, spiTxMode)
+	log.Println("TX SPI connections setup. Errored:", txOpenErr)
+	if txOpenErr != nil {
+		return nil, txOpenErr
 	}
-	return driver, err
+	rxFunc, rxCloseFunc, rxOpenErr := setupConnections(rxDevPath, spiRxMode)
+	log.Println("RX SPI connections setup. Errored:", rxOpenErr)
+	if rxOpenErr != nil {
+		return nil, rxOpenErr
+	}
+
+	piCloseFunc := func() (clsErr error) {
+		ticker.Stop()
+		defer txCloseFunc()
+		defer rxCloseFunc()
+		return nil
+	}
+
+	return newBaseTortiseControllerDriver(txFunc, rxFunc, piCloseFunc, ticker.C, smEventListener)
 }
 
-func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFunc func() error, err error) {
+func setupConnections(spiDevPath string, m spi.Mode) (xFunc func(w, r []byte) error, clsFunc func() error, err error) {
 	log.Println("Setting up connection to:", spiDevPath)
 	var initErr error
 
@@ -70,14 +79,14 @@ func setupConnections(spiDevPath string) (trxFunc func(w, r []byte) error, clsFu
 	spiPort, initErr = spireg.Open(spiDevPath)
 	if initErr == nil {
 		log.Println("Going to start opening connection")
-		spiConn, initErr = spiPort.Connect(spiClockSpeed, spiMode, spiBitsPerWord)
+		spiConn, initErr = spiPort.Connect(spiClockSpeed, m, spiBitsPerWord)
 		log.Println("Should have opened spi port")
 		if initErr == nil {
-			log.Println("Binding close and trx functions")
+			log.Println("Binding close and x functions")
 			clsFunc = spiPort.Close
-			trxFunc = spiConn.Tx
+			xFunc = spiConn.Tx
 		}
 	}
 
-	return trxFunc, clsFunc, initErr
+	return xFunc, clsFunc, initErr
 }
