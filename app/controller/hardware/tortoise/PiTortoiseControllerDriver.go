@@ -50,11 +50,13 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, sm
 	txFunc, txCloseFunc, txOpenErr := setupConnections(txDevPath, spiTxMode)
 	log.Println("TX SPI connections setup. Errored:", txOpenErr)
 	if txOpenErr != nil {
+		log.Println("Error opening tx line", txOpenErr)
 		return nil, txOpenErr
 	}
 	rxFunc, rxCloseFunc, rxOpenErr := setupConnections(rxDevPath, spiRxMode)
 	log.Println("RX SPI connections setup. Errored:", rxOpenErr)
 	if rxOpenErr != nil {
+		log.Println("Error opening rx line", rxOpenErr)
 		return nil, rxOpenErr
 	}
 
