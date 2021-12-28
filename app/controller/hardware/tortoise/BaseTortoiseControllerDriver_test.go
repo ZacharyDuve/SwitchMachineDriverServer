@@ -62,22 +62,22 @@ func TestNewBaseControllerDriverReturnsNoErrorIfTRXFuncAndCloseFuncProvided(t *t
 	}
 }
 
-// //Test that writing to trxfunc works as intended
-// func TestThatTRXFuncIsCalled(t *testing.T) {
-// 	calledTRXFuncChan := make(chan bool)
-// 	trxFunc := func(w, r []byte) error {
-// 		calledTRXFuncChan <- true
-// 		return nil
-// 	}
+//Test that writing to trxfunc works as intended
+func TestThatTRXFuncIsCalled(t *testing.T) {
+	calledTRXFuncChan := make(chan bool)
+	trxFunc := func(w, r []byte) error {
+		calledTRXFuncChan <- true
+		return nil
+	}
 
-// 	eventTrigger := make(chan time.Time)
+	eventTrigger := make(chan time.Time)
 
-// 	newBaseTortiseControllerDriver(noopTRXFunc, trxFunc, noopCloseFunc, eventTrigger, &mockSMEventListener{})
+	newBaseTortiseControllerDriver(noopTRXFunc, trxFunc, noopCloseFunc, eventTrigger, &mockSMEventListener{})
 
-// 	eventTrigger <- time.Now()
+	eventTrigger <- time.Now()
 
-// 	<-calledTRXFuncChan
-// }
+	<-calledTRXFuncChan
+}
 
 type mockSMEventListener struct {
 }

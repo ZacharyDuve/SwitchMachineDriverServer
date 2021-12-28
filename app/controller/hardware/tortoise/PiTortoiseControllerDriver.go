@@ -13,14 +13,14 @@ import (
 )
 
 const (
-	spiClockSpeed     physic.Frequency = physic.Hertz * 100
+	spiClockSpeed     physic.Frequency = physic.MegaHertz * 1
 	spiBusDevPath     string           = "/dev/spidev0"
 	spiTxDevPath      string           = spiBusDevPath + ".0"
 	spiRxDevPath      string           = spiBusDevPath + ".1"
 	spiTxMode         spi.Mode         = spi.Mode2
 	spiRxMode         spi.Mode         = spi.Mode0
 	spiBitsPerWord    int              = 8
-	busUpdateDuration time.Duration    = time.Second * 5
+	busUpdateDuration time.Duration    = time.Millisecond * 100
 )
 
 type piTortoiseControllerDriver struct {
@@ -47,13 +47,13 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, sm
 	log.Println("NewPiTortoiseControllerDriverWithSPIDevPath called")
 	ticker := time.NewTicker(busUpdateDuration)
 
-	txFunc, txCloseFunc, txOpenErr := setupConnections(txDevPath, spiTxMode)
+	txFunc, txCloseFunc, txOpenErr := setupConnection(txDevPath, spiTxMode)
 	log.Println("TX SPI connections setup. Errored:", txOpenErr)
 	if txOpenErr != nil {
 		log.Println("Error opening tx line", txOpenErr)
 		return nil, txOpenErr
 	}
-	rxFunc, rxCloseFunc, rxOpenErr := setupConnections(rxDevPath, spiRxMode)
+	rxFunc, rxCloseFunc, rxOpenErr := setupConnection(rxDevPath, spiRxMode)
 	log.Println("RX SPI connections setup. Errored:", rxOpenErr)
 	if rxOpenErr != nil {
 		log.Println("Error opening rx line", rxOpenErr)
@@ -70,7 +70,7 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, sm
 	return newBaseTortiseControllerDriver(txFunc, rxFunc, piCloseFunc, ticker.C, smEventListener)
 }
 
-func setupConnections(spiDevPath string, m spi.Mode) (xFunc func(w, r []byte) error, clsFunc func() error, err error) {
+func setupConnection(spiDevPath string, m spi.Mode) (xFunc func(w, r []byte) error, clsFunc func() error, err error) {
 	log.Println("Setting up connection to:", spiDevPath)
 	var initErr error
 

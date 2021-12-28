@@ -116,10 +116,6 @@ func newBaseTortiseControllerDriver(txFunc, rxFunc func(w, r []byte) error, clsF
 	return driver, err
 }
 
-func (this *baseTortoiseControllerDriver) GetNumberSwitchMachinesConnected() uint {
-	return 0
-}
-
 func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState model.SwitchMachineState) {
 	this.newSMStateChan <- newState
 }
