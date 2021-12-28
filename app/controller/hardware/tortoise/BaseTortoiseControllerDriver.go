@@ -24,7 +24,7 @@ const (
 	//Number of read bytes per main driver board
 	numRxBytesPerBoard uint = numDriverPortsPerBoard / numRxPortsPerByte
 	//MaxNumberAttachableMainControllerBoards is the limit of boards that one driver can control from one computer. This number is arbitrailily decided
-	MaxNumberAttachableMainControllerBoards uint = 16
+	MaxNumberAttachableMainControllerBoards uint = 1
 	//DefaultThrowTime is the default time that tortoise driver board will active the motor for to throw a turnout
 	DefaultThrowTime time.Duration = time.Second * 2
 
