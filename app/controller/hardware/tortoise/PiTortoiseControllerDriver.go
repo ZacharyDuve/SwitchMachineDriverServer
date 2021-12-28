@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	spiClockSpeed     physic.Frequency = physic.MegaHertz * 1
+	spiClockSpeed     physic.Frequency = physic.KiloHertz * 1
 	spiBusDevPath     string           = "/dev/spidev0"
 	spiTxDevPath      string           = spiBusDevPath + ".0"
 	spiRxDevPath      string           = spiBusDevPath + ".1"
