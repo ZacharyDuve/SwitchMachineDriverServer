@@ -279,12 +279,20 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.Sw
 		bitMask = bitMask << 4
 	}
 
-	//byteIndex := uint(len(this.txBuffer)) - (uint(newState.Id()) / numTxPortsPerByte)
-	byteIndex := uint(newState.Id()) / numTxPortsPerByte
+	byteIndex := calcTxByteIndexFromId(newState.Id())
 
 	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & ^bitMask) | txBits
 	this.handleBusWrite()
 	log.Println("this.txBuffer", this.txBuffer, "byteIndex", byteIndex, "bitMask", bitMask, "txBits", txBits)
+}
+
+func calcTxByteIndexFromId(id model.SwitchMachineId) uint {
+	//This tells us which board we are on
+	boardNumber := uint(id) / numDriverPortsPerBoard
+	//Now we need to figure out which of the bytes for the board we land on
+	byteIndex := boardNumber*numTxBytesPerBoard + (uint(id)%numDriverPortsPerBoard)/numTxPortsPerByte
+
+	return byteIndex
 }
 
 type MaxMainDriverBoardLimitExceededError struct {

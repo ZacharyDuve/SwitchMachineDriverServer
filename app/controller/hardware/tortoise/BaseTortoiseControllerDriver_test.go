@@ -196,3 +196,34 @@ func TestGetRxBitsForPortNumberPanicsForPortNumbersLessThan0(t *testing.T) {
 
 	getRxBitsForPortNumber(0xFF, -1)
 }
+
+//--------------------------------------------- calcTxByteIndexFromId -----------------------
+func TestWhenCalcTxByteIndexFromIdWithId0Returns0(t *testing.T) {
+	if calcTxByteIndexFromId(model.SwitchMachineId(0)) != 0 {
+		t.Fail()
+	}
+}
+
+func TestWhenCalcTxByteIndexFromIdWithId1Returns0(t *testing.T) {
+	if calcTxByteIndexFromId(model.SwitchMachineId(1)) != 0 {
+		t.Fail()
+	}
+}
+
+func TestWhenCalcTxByteIndexFromIdWithId2Returns1(t *testing.T) {
+	if calcTxByteIndexFromId(model.SwitchMachineId(2)) != 1 {
+		t.Fail()
+	}
+}
+
+func TestWhenCalcTxByteIndexFromIdWithId3Returns1(t *testing.T) {
+	if calcTxByteIndexFromId(model.SwitchMachineId(3)) != 1 {
+		t.Fail()
+	}
+}
+
+func TestWhenCalcTxByteIndexFromIdWithId4Returns2(t *testing.T) {
+	if calcTxByteIndexFromId(model.SwitchMachineId(4)) != 2 {
+		t.Fail()
+	}
+}
