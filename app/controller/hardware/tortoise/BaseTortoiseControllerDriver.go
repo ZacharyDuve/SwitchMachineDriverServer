@@ -279,8 +279,8 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.Sw
 		bitMask = bitMask << 4
 	}
 
-	byteIndex := uint(len(this.txBuffer)) - (uint(newState.Id()) / numTxPortsPerByte)
-	log.Println("Byte index", byteIndex)
+	//byteIndex := uint(len(this.txBuffer)) - (uint(newState.Id()) / numTxPortsPerByte)
+	byteIndex := uint(newState.Id()) / numTxPortsPerByte
 
 	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & ^bitMask) | txBits
 	this.handleBusWrite()
