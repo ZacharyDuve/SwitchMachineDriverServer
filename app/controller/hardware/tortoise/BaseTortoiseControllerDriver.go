@@ -65,8 +65,8 @@ const (
 
 	positionBitMask      byte = 0x03
 	positionUnknown      byte = 0x03
-	position0            byte = 0x01
-	position1            byte = 0x02
+	position0            byte = 0x02
+	position1            byte = 0x01
 	positionDisconnected byte = 0x00
 )
 
