@@ -3,13 +3,13 @@ package model
 import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
 
 type SwitchMachine struct {
-	SMId int `json:"id,omitempty"`
+	SMId int `json:"id"`
 
-	Pos SwitchMachinePosition `json:"position,omitempty"`
+	Pos SwitchMachinePosition `json:"position"`
 
-	Gpio0 GpioState `json:"gpio0,omitempty"`
+	Gpio0 GpioState `json:"gpio0"`
 
-	Gpio1 GpioState `json:"gpio1,omitempty"`
+	Gpio1 GpioState `json:"gpio1"`
 }
 
 func NewAPISwitchMachineFromModel(modelSM model.SwitchMachineState) *SwitchMachine {

@@ -2,46 +2,29 @@ package smdsconfig
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"os"
+
+	"github.com/google/uuid"
 )
 
 const (
-	configFilePath            string = "config.json"
-	maxNumberControllerBoards uint   = 20
+	configFilePath string = "server-config.json"
 )
 
 type SMDSConfig interface {
-	NumberControllerBoards() uint
+	SMDSId() string
 }
 
 type smdsConfig struct {
-	NumControllerBoards uint `json:"number-controller-boards"`
+	id string
 }
 
-func (this *smdsConfig) NumberControllerBoards() uint {
-	return this.NumControllerBoards
+func (this *smdsConfig) SMDSId() string {
+	return this.id
 }
 
 var curSMDSConfig *smdsConfig
-
-func UpdateAndSaveSMDSConfig(newSMDSConfig SMDSConfig) error {
-	var err error
-
-	if newSMDSConfig.NumberControllerBoards() > maxNumberControllerBoards {
-		err = errors.New(fmt.Sprintf("Requested Number of Controller Boards %d exceeds max of %d", newSMDSConfig.NumberControllerBoards(), maxNumberControllerBoards))
-	} else {
-		writeableConfig := &smdsConfig{NumControllerBoards: newSMDSConfig.NumberControllerBoards()}
-		err = writeSMDSConfigToJSONFile(writeableConfig)
-		if err == nil {
-			curSMDSConfig.NumControllerBoards = writeableConfig.NumControllerBoards
-		}
-	}
-
-	return err
-}
 
 func writeSMDSConfigToJSONFile(config *smdsConfig) error {
 	configFile, err := os.Create(configFilePath)
@@ -56,7 +39,7 @@ func writeSMDSConfigToJSONFile(config *smdsConfig) error {
 
 func newDefaultConfig() *smdsConfig {
 	config := &smdsConfig{}
-	config.NumControllerBoards = 0
+	config.id = uuid.New().String()
 	return config
 }
 
@@ -95,10 +78,6 @@ func configFileExists() bool {
 
 	return !os.IsNotExist(err)
 }
-
-// func getSMDSConfigFile() (io.ReadWriteCloser, error) {
-// 	return os.OpenFile(configFilePath, os.O_RDWR|os.O_CREATE, 0755)
-// }
 
 func readSMDSConfigFromFile() *smdsConfig {
 	config := &smdsConfig{}
