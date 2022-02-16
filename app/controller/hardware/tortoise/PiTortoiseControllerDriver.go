@@ -20,7 +20,7 @@ const (
 	spiTxMode         spi.Mode         = spi.Mode2
 	spiRxMode         spi.Mode         = spi.Mode0
 	spiBitsPerWord    int              = 8
-	busUpdateDuration time.Duration    = time.Second * 1
+	busUpdateDuration time.Duration    = time.Millisecond * 100
 )
 
 type piTortoiseControllerDriver struct {
@@ -48,13 +48,13 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, sm
 	ticker := time.NewTicker(busUpdateDuration)
 
 	txFunc, txCloseFunc, txOpenErr := setupConnection(txDevPath, spiTxMode)
-	log.Println("TX SPI connections setup. Errored:", txOpenErr)
+	log.Println("TX SPI connections setup.")
 	if txOpenErr != nil {
 		log.Println("Error opening tx line", txOpenErr)
 		return nil, txOpenErr
 	}
 	rxFunc, rxCloseFunc, rxOpenErr := setupConnection(rxDevPath, spiRxMode)
-	log.Println("RX SPI connections setup. Errored:", rxOpenErr)
+	log.Println("RX SPI connections setup.")
 	if rxOpenErr != nil {
 		log.Println("Error opening rx line", rxOpenErr)
 		return nil, rxOpenErr
@@ -80,11 +80,8 @@ func setupConnection(spiDevPath string, m spi.Mode) (xFunc func(w, r []byte) err
 	//Open port and connections
 	spiPort, initErr = spireg.Open(spiDevPath)
 	if initErr == nil {
-		log.Println("Going to start opening connection")
 		spiConn, initErr = spiPort.Connect(spiClockSpeed, m, spiBitsPerWord)
-		log.Println("Should have opened spi port")
 		if initErr == nil {
-			log.Println("Binding close and x functions")
 			clsFunc = spiPort.Close
 			xFunc = spiConn.Tx
 		}

@@ -67,7 +67,7 @@ func (this *tortoiseControllerImpl) SetSwitchMachinePosition(id model.SwitchMach
 	if !this.existingSMStates.HasSwitchMachine(id) {
 		err = newSwitchMachineNotExistError()
 	} else {
-		log.Println("Updating position for switch machine", id, pos)
+		log.Println("Updating position for switch machine", id)
 		curState := this.existingSMStates.GetSwitchMachineById(id)
 		log.Println("curState:", curState)
 		newState := model.NewSwitchMachineState(id, pos, getMotorStateForToPosition(pos), curState.GPIO0State(), curState.GPIO1State())
@@ -95,7 +95,7 @@ func (this *tortoiseControllerImpl) SetSwitchMachineGPIO(id model.SwitchMachineI
 	if !this.existingSMStates.HasSwitchMachine(id) {
 		err = newSwitchMachineNotExistError()
 	} else {
-		log.Println("Updating GPIO for switch machine", id, gpio0, gpio1)
+		log.Println("Updating GPIO for switch machine", id)
 		curState := this.existingSMStates.GetSwitchMachineById(id)
 		log.Println("curState:", curState)
 		newState := model.NewSwitchMachineState(id, curState.Position(), curState.MotorState(), gpio0, gpio1)
