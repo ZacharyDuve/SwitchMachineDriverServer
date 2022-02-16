@@ -157,7 +157,6 @@ func (this *baseTortoiseControllerDriver) handleBusWrite() {
 }
 
 func (this *baseTortoiseControllerDriver) handleBusRead() {
-	log.Println("Handling the bus read")
 	this.rxFunc(this.rxWasteTxBuffer, this.rxBuffer)
 	//Figure out what changed
 	this.processRxBufferChanges()
