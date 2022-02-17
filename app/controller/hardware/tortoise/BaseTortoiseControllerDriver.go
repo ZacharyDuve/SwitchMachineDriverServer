@@ -24,7 +24,7 @@ const (
 	//Number of read bytes per main driver board
 	numRxBytesPerBoard uint = numDriverPortsPerBoard / numRxPortsPerByte
 	//MaxNumberAttachableMainControllerBoards is the limit of boards that one driver can control from one computer. This number is arbitrailily decided
-	MaxNumberAttachableMainControllerBoards uint = 1
+	MaxNumberAttachableMainControllerBoards uint = 8
 	//DefaultThrowTime is the default time that tortoise driver board will active the motor for to throw a turnout
 	DefaultThrowTime time.Duration = time.Second * 2
 
@@ -48,9 +48,7 @@ const (
 	//msbFirst
 	msbFirst bitOrder = false
 	lsbFirst bitOrder = true
-)
 
-const (
 	motorStateBitMask byte = 0x0C
 	motorIdleBits     byte = 0x00
 	motorToPos0Bits   byte = 0x04
@@ -278,14 +276,14 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState model.Sw
 		bitMask = bitMask << 4
 	}
 
-	byteIndex := uint(len(this.txBuffer)-1) - calcTxByteIndexFromId(newState.Id())
+	byteIndex := uint(len(this.txBuffer)-1) - calcTxByteOffsetFromId(newState.Id())
 
 	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & ^bitMask) | txBits
 	this.handleBusWrite()
 	log.Println("this.txBuffer", this.txBuffer, "byteIndex", byteIndex, "bitMask", bitMask, "txBits", txBits)
 }
 
-func calcTxByteIndexFromId(id model.SwitchMachineId) uint {
+func calcTxByteOffsetFromId(id model.SwitchMachineId) uint {
 	//This tells us which board we are on
 	boardNumber := uint(id) / numDriverPortsPerBoard
 	//Now we need to figure out which of the bytes for the board we land on

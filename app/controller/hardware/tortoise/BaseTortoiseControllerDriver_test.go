@@ -174,7 +174,7 @@ func TestGetRxBitsForPortNumberReturnsByteWithValueInBits0And1ForPort3(t *testin
 }
 
 func hasDataInBits2Through7(v byte) bool {
-	return (v & 0b11111100) != 0
+	return v&0b11111100 != 0
 }
 
 func TestGetRxBitsForPortNumberPanicsForPortNumbersGreaterThan3(t *testing.T) {
@@ -197,33 +197,33 @@ func TestGetRxBitsForPortNumberPanicsForPortNumbersLessThan0(t *testing.T) {
 	getRxBitsForPortNumber(0xFF, -1)
 }
 
-//--------------------------------------------- calcTxByteIndexFromId -----------------------
-func TestWhenCalcTxByteIndexFromIdWithId0Returns0(t *testing.T) {
-	if calcTxByteIndexFromId(model.SwitchMachineId(0)) != 0 {
+//--------------------------------------------- calcTxByteOffsetFromId -----------------------
+func TestWhencalcTxByteOffsetFromIdWithId0Returns0(t *testing.T) {
+	if calcTxByteOffsetFromId(model.SwitchMachineId(0)) != 0 {
 		t.Fail()
 	}
 }
 
-func TestWhenCalcTxByteIndexFromIdWithId1Returns0(t *testing.T) {
-	if calcTxByteIndexFromId(model.SwitchMachineId(1)) != 0 {
+func TestWhencalcTxByteOffsetFromIdWithId1Returns0(t *testing.T) {
+	if calcTxByteOffsetFromId(model.SwitchMachineId(1)) != 0 {
 		t.Fail()
 	}
 }
 
-func TestWhenCalcTxByteIndexFromIdWithId2Returns1(t *testing.T) {
-	if calcTxByteIndexFromId(model.SwitchMachineId(2)) != 1 {
+func TestWhencalcTxByteOffsetFromIdWithId2Returns1(t *testing.T) {
+	if calcTxByteOffsetFromId(model.SwitchMachineId(2)) != 1 {
 		t.Fail()
 	}
 }
 
-func TestWhenCalcTxByteIndexFromIdWithId3Returns1(t *testing.T) {
-	if calcTxByteIndexFromId(model.SwitchMachineId(3)) != 1 {
+func TestWhencalcTxByteOffsetFromIdWithId3Returns1(t *testing.T) {
+	if calcTxByteOffsetFromId(model.SwitchMachineId(3)) != 1 {
 		t.Fail()
 	}
 }
 
-func TestWhenCalcTxByteIndexFromIdWithId4Returns2(t *testing.T) {
-	if calcTxByteIndexFromId(model.SwitchMachineId(4)) != 2 {
+func TestWhencalcTxByteOffsetFromIdWithId4Returns2(t *testing.T) {
+	if calcTxByteOffsetFromId(model.SwitchMachineId(4)) != 2 {
 		t.Fail()
 	}
 }
