@@ -182,7 +182,7 @@ func (this *baseTortoiseControllerDriver) handleRXByteChange(prevRxByte, curRxBy
 		if prevRxBits != curRxBits {
 			log.Println("Bytes don't match need to figure out what changed", prevRxBits, " ", curRxBits)
 
-			curSMId := model.SwitchMachineId(portNumber)
+			curSMId := model.SwitchMachineId(portNumber + byteIndex*int(numRxPortsPerByte))
 			wasAttached := isConnectedFromPositionBits(prevRxBits)
 			isAttached := isConnectedFromPositionBits(curRxBits)
 
