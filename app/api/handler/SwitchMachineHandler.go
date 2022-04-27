@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 
 	apiModel "github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/environment"
+	env "github.com/ZacharyDuve/apireg/environment"
 	"github.com/gorilla/mux"
 )
 
@@ -31,7 +32,7 @@ func NewSwitchMachineHandler(rtr *mux.Router) {
 	subRtr.PathPrefix("/{" + idRequestKey + "}/gpio").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachineGPIO)
 	subRtr.PathPrefix("/{" + idRequestKey + "}").Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachine)
 
-	if os.Getenv("environment") == "production" {
+	if environment.GetCurrent() == env.Prod {
 		smHandler.controller = controller.NewTortoiseController()
 	} else {
 		rxIn := make([]byte, 5, 5)
