@@ -134,8 +134,10 @@ func (this *tortoiseControllerImpl) createStopMotorCallback(id model.SwitchMachi
 			stateBeforeMotorStop.GPIO0State(),
 			stateBeforeMotorStop.GPIO1State())
 		log.Println("Stopping motor with id:", id)
-		this.driver.UpdateSwitchMachine(stoppedMotorState)
-		this.existingSMStates.UpdateSwitchMachine(stoppedMotorState)
+		if this.existingSMStates.HasSwitchMachine(id) {
+			this.driver.UpdateSwitchMachine(stoppedMotorState)
+			this.existingSMStates.UpdateSwitchMachine(stoppedMotorState)
+		}
 	}()
 }
 

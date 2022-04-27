@@ -76,7 +76,10 @@ func (this *switchMachineStoreImpl) RemoveSwitchMachine(smId model.SwitchMachine
 
 func (this *switchMachineStoreImpl) UpdateSwitchMachine(sm model.SwitchMachineState) error {
 	var err error
-	if !this.HasSwitchMachine(sm.Id()) {
+	this.rwLock.RLock()
+	contains := this.HasSwitchMachine(sm.Id())
+	this.rwLock.RUnlock()
+	if !contains {
 		err = newDoesNotContainSwitchMacineWithIdError()
 	} else {
 		this.rwLock.Lock()
