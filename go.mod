@@ -3,7 +3,7 @@ module github.com/ZacharyDuve/SwitchMachineDriverServer
 go 1.18
 
 require (
-	github.com/ZacharyDuve/apireg v0.1.24
+	github.com/ZacharyDuve/apireg v0.1.25
 	github.com/ZacharyDuve/serverid v0.1.1
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0

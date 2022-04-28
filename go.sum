@@ -1,5 +1,5 @@
-github.com/ZacharyDuve/apireg v0.1.24 h1:hgJklB/uU66ulE290YpHdTlPC54oKMZg2osqUK3Gobc=
-github.com/ZacharyDuve/apireg v0.1.24/go.mod h1:v6z9k8+Fw9CYmTEKUQI5W0BarIjJnyNrkJAbw9dEc/0=
+github.com/ZacharyDuve/apireg v0.1.25 h1:ai9A3vleE3nM9WQSiZ/VwsutQfUf9vr0mF2ktA+hM48=
+github.com/ZacharyDuve/apireg v0.1.25/go.mod h1:Aj7Z4+6ERKwkVFofHckX6Oawjd+NKgNScRM3LCPrM6A=
 github.com/ZacharyDuve/serverid v0.1.1 h1:qW20ljiht1u9YgMqLFhpKwHnoDOvFnQZV05SmLxF8ks=
 github.com/ZacharyDuve/serverid v0.1.1/go.mod h1:ey0acV15Hv3n7H8fbaWSd9X1NVV5Lzm0ukRgehv3o+g=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
