@@ -9,6 +9,7 @@ import (
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/environment"
 	"github.com/ZacharyDuve/apireg"
 	"github.com/ZacharyDuve/apireg/api"
+	"github.com/ZacharyDuve/serverid"
 	"github.com/gorilla/mux"
 )
 
@@ -32,6 +33,11 @@ func NewSMDSApi() *smdsAPI {
 	}
 	api.apiRegistry = reg
 	api.router = mux.NewRouter()
+	sIdSvc, err := serverid.NewFileServerIdService("")
+	if err != nil {
+		panic(err)
+	}
+	api.router.HandleFunc(serverid.GetHandlerFuncFromServerIdService(sIdSvc))
 	handler.NewSwitchMachineHandler(api.router)
 	return api
 }
