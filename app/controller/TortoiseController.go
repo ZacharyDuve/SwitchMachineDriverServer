@@ -21,11 +21,17 @@ type TortoiseController interface {
 	SetSwitchMachineGPIO(id model.SwitchMachineId, gpio0, gpio1 model.GPIOState) error
 	GetSwitchMachines() []model.SwitchMachineState
 	GetSwitchMachineById(id model.SwitchMachineId) (model.SwitchMachineState, error)
+	SetSwitchMachineAddedListenerFunc(func(model.SwitchMachineState))
+	SetSwitchMachineRemovedListenerFunc(func(model.SwitchMachineId))
+	SetSwitchMachineUpdatedListenerFunc(func(model.SwitchMachineState))
 }
 
 type tortoiseControllerImpl struct {
-	driver           hardware.SwitchMachineDriver
-	existingSMStates persistance.SwitchMachineStore
+	driver                hardware.SwitchMachineDriver
+	existingSMStates      persistance.SwitchMachineStore
+	smAddedListenerFunc   func(model.SwitchMachineState)
+	smRemovedListenerFunc func(model.SwitchMachineId)
+	smUpdatedListenerFunc func(model.SwitchMachineState)
 }
 
 //Wrapping the internal testable call as an external facing interface to restrict functions
@@ -164,6 +170,10 @@ func (this *tortoiseControllerImpl) SwitchMachineAdded(sm model.SwitchMachineSta
 	if err != nil {
 		panic(err)
 	}
+
+	if this.smAddedListenerFunc != nil {
+		this.smAddedListenerFunc(sm)
+	}
 }
 
 func (this *tortoiseControllerImpl) SwitchMachineUpdated(sm model.SwitchMachineState) {
@@ -171,6 +181,10 @@ func (this *tortoiseControllerImpl) SwitchMachineUpdated(sm model.SwitchMachineS
 
 	if err != nil {
 		panic(err)
+	}
+
+	if this.smUpdatedListenerFunc != nil {
+		this.smUpdatedListenerFunc(sm)
 	}
 }
 
@@ -180,6 +194,21 @@ func (this *tortoiseControllerImpl) SwitchMachineRemoved(smId model.SwitchMachin
 	if err != nil {
 		panic(err)
 	}
+
+	if this.smRemovedListenerFunc != nil {
+		this.smRemovedListenerFunc(smId)
+	}
+}
+
+func (this *tortoiseControllerImpl) SetSwitchMachineAddedListenerFunc(addLFunc func(model.SwitchMachineState)) {
+	this.smAddedListenerFunc = addLFunc
+}
+
+func (this *tortoiseControllerImpl) SetSwitchMachineRemovedListenerFunc(rmvLFunc func(model.SwitchMachineId)) {
+	this.smRemovedListenerFunc = rmvLFunc
+}
+func (this *tortoiseControllerImpl) SetSwitchMachineUpdatedListenerFunc(updtLFunc func(model.SwitchMachineState)) {
+	this.smUpdatedListenerFunc = updtLFunc
 }
 
 func newSwitchMachineNotExistError() error {

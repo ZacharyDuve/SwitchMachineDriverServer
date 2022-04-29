@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/handler"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/switchmachine"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/environment"
 	"github.com/ZacharyDuve/apireg"
 	"github.com/ZacharyDuve/apireg/api"
@@ -16,8 +16,8 @@ import (
 const (
 	ApiName          string = "SMDriverServer"
 	ApiVersionMajor  uint   = 0
-	ApiVersionMinor  uint   = 1
-	ApiVersionBugFix uint   = 1
+	ApiVersionMinor  uint   = 9
+	ApiVersionBugFix uint   = 3
 )
 
 type smdsAPI struct {
@@ -38,7 +38,7 @@ func NewSMDSApi() *smdsAPI {
 		panic(err)
 	}
 	api.router.HandleFunc(serverid.GetHandlerFuncFromServerIdService(sIdSvc))
-	handler.NewSwitchMachineHandler(api.router)
+	switchmachine.NewSwitchMachineHandler(api.router)
 	return api
 }
 

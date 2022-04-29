@@ -1,4 +1,4 @@
-package handler
+package switchmachine
 
 import (
 	"encoding/hex"
@@ -22,12 +22,13 @@ type switchMachineHandler struct {
 }
 
 const (
-	idRequestKey string = "id"
+	idRequestKey  string = "id"
+	smHandlerPath string = "/switchmachine"
 )
 
 func NewSwitchMachineHandler(rtr *mux.Router) {
 	smHandler := &switchMachineHandler{}
-	subRtr := rtr.PathPrefix("/switchmachine").Subrouter()
+	subRtr := rtr.PathPrefix(smHandlerPath).Subrouter()
 	subRtr.PathPrefix("/{" + idRequestKey + "}/position").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachinePosition)
 	subRtr.PathPrefix("/{" + idRequestKey + "}/gpio").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachineGPIO)
 	subRtr.PathPrefix("/{" + idRequestKey + "}").Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachine)
@@ -51,6 +52,7 @@ func NewSwitchMachineHandler(rtr *mux.Router) {
 		smHandler.controller = controller.NewTortoiseControllerWithMockDriver(txOut, rxIn)
 	}
 	subRtr.Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachines)
+	RegsiterEventHandler(subRtr, smHandler.controller)
 }
 
 func (this *switchMachineHandler) handleGetSwitchMachines(w http.ResponseWriter, r *http.Request) {
