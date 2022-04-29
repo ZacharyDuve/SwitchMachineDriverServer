@@ -29,9 +29,6 @@ const (
 func NewSwitchMachineHandler(rtr *mux.Router) {
 	smHandler := &switchMachineHandler{}
 	subRtr := rtr.PathPrefix(smHandlerPath).Subrouter()
-	subRtr.PathPrefix("/{" + idRequestKey + "}/position").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachinePosition)
-	subRtr.PathPrefix("/{" + idRequestKey + "}/gpio").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachineGPIO)
-	subRtr.PathPrefix("/{" + idRequestKey + "}").Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachine)
 
 	if environment.GetCurrent() == env.Prod {
 		smHandler.controller = controller.NewTortoiseController()
@@ -51,8 +48,14 @@ func NewSwitchMachineHandler(rtr *mux.Router) {
 		})
 		smHandler.controller = controller.NewTortoiseControllerWithMockDriver(txOut, rxIn)
 	}
-	subRtr.Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachines)
+
 	RegsiterEventHandler(subRtr, smHandler.controller)
+
+	subRtr.PathPrefix("/{" + idRequestKey + "}/position").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachinePosition)
+	subRtr.PathPrefix("/{" + idRequestKey + "}/gpio").Methods(http.MethodPut).HandlerFunc(smHandler.handleUpdateSwitchMachineGPIO)
+	subRtr.PathPrefix("/{" + idRequestKey + "}").Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachine)
+
+	subRtr.Methods(http.MethodGet).HandlerFunc(smHandler.handleGetSwitchMachines)
 }
 
 func (this *switchMachineHandler) handleGetSwitchMachines(w http.ResponseWriter, r *http.Request) {
