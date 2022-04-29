@@ -3,9 +3,9 @@ package model
 import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
 
 type SwitchMachineGPIOUpdateRequest struct {
-	Gpio0 GpioState `json:"gpio0,omitempty"`
+	Gpio0 GPIOState `json:"gpio0,omitempty"`
 
-	Gpio1 GpioState `json:"gpio1,omitempty"`
+	Gpio1 GPIOState `json:"gpio1,omitempty"`
 }
 
 func (this *SwitchMachineGPIOUpdateRequest) GPIO0() model.GPIOState {

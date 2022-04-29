@@ -11,7 +11,7 @@ const (
 	Unknown   SwitchMachinePosition = "unknown"
 )
 
-func mapApiPosToModelPos(apiPos SwitchMachinePosition) model.SwitchMachinePosition {
+func MapApiPosToModelPos(apiPos SwitchMachinePosition) model.SwitchMachinePosition {
 	if apiPos == Position0 {
 		return model.Position0
 	} else if apiPos == Position1 {
@@ -21,7 +21,7 @@ func mapApiPosToModelPos(apiPos SwitchMachinePosition) model.SwitchMachinePositi
 	}
 }
 
-func mapModelPosToApiPos(modelPos model.SwitchMachinePosition) SwitchMachinePosition {
+func MapModelPosToApiPos(modelPos model.SwitchMachinePosition) SwitchMachinePosition {
 	if modelPos == model.Position0 {
 		return Position0
 	} else if modelPos == model.Position1 {

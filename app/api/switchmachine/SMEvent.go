@@ -3,7 +3,7 @@ package switchmachine
 import (
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
 	"github.com/ZacharyDuve/eventsocket"
 	"github.com/google/uuid"
 )

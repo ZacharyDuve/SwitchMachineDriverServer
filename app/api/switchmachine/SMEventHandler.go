@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
+	apimodel "github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
 	"github.com/ZacharyDuve/eventsocket"
@@ -37,7 +38,7 @@ func RegsiterEventHandler(r *mux.Router, c controller.TortoiseController) {
 		eventServer.Send(e)
 	})
 	c.SetSwitchMachineRemovedListenerFunc(func(smi model.SwitchMachineId) {
-		jsonSMEvent := &jsonSMEventData{Id: smi}
+		jsonSMEvent := &jsonSMEventData{Id: apimodel.SwitchMachineId(smi)}
 
 		data, err := json.Marshal(jsonSMEvent)
 		if err != nil {
@@ -71,10 +72,10 @@ func RegsiterEventHandler(r *mux.Router, c controller.TortoiseController) {
 
 func mapSMStateToJSONSMEventData(s model.SwitchMachineState) *jsonSMEventData {
 	data := &jsonSMEventData{}
-	data.Id = s.Id()
-	data.Position = s.Position()
-	data.Motor = s.MotorState()
-	data.GPIO0 = s.GPIO0State()
-	data.GPIO1 = s.GPIO1State()
+	data.Id = apimodel.SwitchMachineId(s.Id())
+	data.Position = apimodel.MapModelPosToApiPos(s.Position())
+	data.Motor = apimodel.MapModelMStateToAPIMState(s.MotorState())
+	data.GPIO0 = apimodel.MapModelGPIOToAPI(s.GPIO0State())
+	data.GPIO1 = apimodel.MapModelGPIOToAPI(s.GPIO1State())
 	return data
 }

@@ -7,5 +7,5 @@ type SwitchMachinePositionUpdateRequest struct {
 }
 
 func (this *SwitchMachinePositionUpdateRequest) GetPosition() model.SwitchMachinePosition {
-	return mapApiPosToModelPos(this.Position)
+	return MapApiPosToModelPos(this.Position)
 }
