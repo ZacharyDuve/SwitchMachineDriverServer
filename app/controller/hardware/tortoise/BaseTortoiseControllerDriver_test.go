@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 func noopTRXFunc(w, r []byte) error {
@@ -18,48 +18,7 @@ func noopCloseFunc() error {
 
 //Test to see if baseTortoiseControllerDriver implements functions of TortoiseControllerDriver. Compile should fail if it doesn't
 func TestBaseTortoiseControllerDriverImplementsTortoiseControllerDriver(t *testing.T) {
-	var _ hardware.SwitchMachineDriver = &baseTortoiseControllerDriver{}
-}
-
-//------------------------------------- newBaseTortoiseControllerDriver tests ---------------------------------
-func TestNewBaseControllerDriverReturnsErrorIfNoTXFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(nil, noopTRXFunc, noopCloseFunc, make(<-chan time.Time), &mockSMEventListener{})
-
-	if err == nil {
-		t.Fail()
-	}
-}
-
-func TestNewBaseControllerDriverReturnsErrorIfNoRXFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(noopTRXFunc, nil, noopCloseFunc, make(<-chan time.Time), &mockSMEventListener{})
-
-	if err == nil {
-		t.Fail()
-	}
-}
-
-func TestNewBaseControllerDriverReturnsErrorIfNoCloseFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(noopTRXFunc, noopTRXFunc, nil, make(<-chan time.Time), &mockSMEventListener{})
-
-	if err == nil {
-		t.Fail()
-	}
-}
-
-func TestNewBaseControllerDriverReturnsErrorIfNoEventTriggerProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(noopTRXFunc, noopTRXFunc, noopCloseFunc, nil, &mockSMEventListener{})
-
-	if err == nil {
-		t.Fail()
-	}
-}
-
-func TestNewBaseControllerDriverReturnsNoErrorIfTRXFuncAndCloseFuncProvided(t *testing.T) {
-	_, err := newBaseTortiseControllerDriver(noopTRXFunc, noopTRXFunc, noopCloseFunc, make(<-chan time.Time), &mockSMEventListener{})
-
-	if err != nil {
-		t.Fail()
-	}
+	var _ hardware.Driver = &baseTortoiseControllerDriver{}
 }
 
 //Test that writing to trxfunc works as intended
@@ -71,26 +30,15 @@ func TestThatTRXFuncIsCalled(t *testing.T) {
 	}
 
 	eventTrigger := make(chan time.Time)
+	driver := getBaseDriverWithAllNOOP()
+	driver.rxFunc = trxFunc
+	driver.rxTrigger = eventTrigger
 
-	newBaseTortiseControllerDriver(noopTRXFunc, trxFunc, noopCloseFunc, eventTrigger, &mockSMEventListener{})
+	driver.Start(&mockDriverEventListener{})
 
 	eventTrigger <- time.Now()
 
 	<-calledTRXFuncChan
-}
-
-type mockSMEventListener struct {
-}
-
-func (this *mockSMEventListener) SwitchMachineAdded(model.SwitchMachineState) {
-
-}
-
-func (this *mockSMEventListener) SwitchMachineUpdated(model.SwitchMachineState) {
-
-}
-func (this *mockSMEventListener) SwitchMachineRemoved(model.SwitchMachineId) {
-
 }
 
 //---------------------------- isConnectedFromPositionBits ----------------------------
@@ -101,13 +49,13 @@ func TestIsConnectedFromPositionBitsReturnsFalseIfPositionIsDisconnected(t *test
 }
 
 func TestIsConnectedFromPositionBitsReturnsTrueIfPositionIsPos0(t *testing.T) {
-	if !isConnectedFromPositionBits(position0) {
+	if !isConnectedFromPositionBits(position0Port03) {
 		t.Fail()
 	}
 }
 
 func TestIsConnectedFromPositionBitsReturnsTrueIfPositionIsPos1(t *testing.T) {
-	if !isConnectedFromPositionBits(position1) {
+	if !isConnectedFromPositionBits(position1Port03) {
 		t.Fail()
 	}
 }
@@ -120,32 +68,58 @@ func TestIsConnectedFromPositionBitsReturnsTrueIfPositionIsPositionUnknown(t *te
 
 //----------------------------------------- getSMPositionFromRxBits -----------------------
 
-func TestGetSMPositionFromRxBitsReturnsReturnsPosition0WhenBitsMapToPosition0(t *testing.T) {
-	if getSMPositionFromRxBits(position0) != model.Position0 {
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition0WhenBitsMapToPosition0ForPort0(t *testing.T) {
+	if getSMPositionFromRxBits(position0Port03, 0) != switchmachine.Position0 {
 		t.Fail()
 	}
 }
 
-func TestGetSMPositionFromRxBitsReturnsReturnsPosition1WhenBitsMapToPosition1(t *testing.T) {
-	if getSMPositionFromRxBits(position1) != model.Position1 {
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition1WhenBitsMapToPosition1ForPort0(t *testing.T) {
+	if getSMPositionFromRxBits(position1Port03, 0) != switchmachine.Position1 {
+		t.Fail()
+	}
+}
+
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition0WhenBitsMapToPosition0ForPort1(t *testing.T) {
+	if getSMPositionFromRxBits(position0Port12, 1) != switchmachine.Position0 {
+		t.Fail()
+	}
+}
+
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition1WhenBitsMapToPosition1ForPort1(t *testing.T) {
+	if getSMPositionFromRxBits(position1Port12, 1) != switchmachine.Position1 {
+		t.Fail()
+	}
+}
+
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition0WhenBitsMapToPosition0ForPort2(t *testing.T) {
+	if getSMPositionFromRxBits(position0Port12, 2) != switchmachine.Position0 {
+		t.Fail()
+	}
+}
+
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition1WhenBitsMapToPosition1ForPort2(t *testing.T) {
+	if getSMPositionFromRxBits(position1Port12, 2) != switchmachine.Position1 {
+		t.Fail()
+	}
+}
+
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition0WhenBitsMapToPosition0ForPort3(t *testing.T) {
+	if getSMPositionFromRxBits(position0Port03, 0) != switchmachine.Position0 {
+		t.Fail()
+	}
+}
+
+func TestGetSMPositionFromRxBitsReturnsReturnsPosition1WhenBitsMapToPosition1ForPort3(t *testing.T) {
+	if getSMPositionFromRxBits(position1Port03, 0) != switchmachine.Position1 {
 		t.Fail()
 	}
 }
 
 func TestGetSMPositionFromRxBitsReturnsReturnsPositionUnknownWhenBitsMapToPositionUnknown(t *testing.T) {
-	if getSMPositionFromRxBits(positionUnknown) != model.PositionUnknown {
+	if getSMPositionFromRxBits(positionUnknown, 0) != switchmachine.PositionUnknown {
 		t.Fail()
 	}
-}
-
-func TestGetSMPositionFromRxBitsPanicsWhenPositionBitsMapToDisconnected(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fail()
-		}
-	}()
-
-	getSMPositionFromRxBits(positionDisconnected)
 }
 
 //------------------------------------ getRxBitsForPortNumber ------------------------------------------
@@ -199,31 +173,245 @@ func TestGetRxBitsForPortNumberPanicsForPortNumbersLessThan0(t *testing.T) {
 
 //--------------------------------------------- calcTxByteOffsetFromId -----------------------
 func TestWhencalcTxByteOffsetFromIdWithId0Returns0(t *testing.T) {
-	if calcTxByteOffsetFromId(model.SwitchMachineId(0)) != 0 {
+	if calcTxByteOffsetFromId(switchmachine.Id(0)) != 0 {
 		t.Fail()
 	}
 }
 
 func TestWhencalcTxByteOffsetFromIdWithId1Returns0(t *testing.T) {
-	if calcTxByteOffsetFromId(model.SwitchMachineId(1)) != 0 {
+	if calcTxByteOffsetFromId(switchmachine.Id(1)) != 0 {
 		t.Fail()
 	}
 }
 
 func TestWhencalcTxByteOffsetFromIdWithId2Returns1(t *testing.T) {
-	if calcTxByteOffsetFromId(model.SwitchMachineId(2)) != 1 {
+	if calcTxByteOffsetFromId(switchmachine.Id(2)) != 1 {
 		t.Fail()
 	}
 }
 
 func TestWhencalcTxByteOffsetFromIdWithId3Returns1(t *testing.T) {
-	if calcTxByteOffsetFromId(model.SwitchMachineId(3)) != 1 {
+	if calcTxByteOffsetFromId(switchmachine.Id(3)) != 1 {
 		t.Fail()
 	}
 }
 
 func TestWhencalcTxByteOffsetFromIdWithId4Returns2(t *testing.T) {
-	if calcTxByteOffsetFromId(model.SwitchMachineId(4)) != 2 {
+	if calcTxByteOffsetFromId(switchmachine.Id(4)) != 2 {
 		t.Fail()
+	}
+}
+
+//-------------------------------Close--------------------------------
+
+func TestCallingCloseCallsConfiguredCloseFunc(t *testing.T) {
+	wasCloseCalled := false
+	eventTrigger := make(chan time.Time)
+	driver := getBaseDriverWithAllNOOP()
+	driver.closeFunc = func() error {
+		wasCloseCalled = true
+		return nil
+	}
+	driver.rxTrigger = eventTrigger
+
+	driver.Start(&mockDriverEventListener{})
+
+	driver.Close()
+	if !wasCloseCalled {
+		t.Fail()
+	}
+}
+
+//---------------------------------RX-----------------------------------
+
+func TestThatHavingSwitchMachineConnectOnId0InUnknownPositionCausesSwitchMachineAddedEventToBeFired(t *testing.T) {
+	wasExpectedEventFired := false
+	eventTrigger := make(chan time.Time)
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.rxFunc = func(w, r []byte) error {
+		copy(r, []byte{port0RxBitMask})
+		return nil
+	}
+	driver.rxTrigger = eventTrigger
+	driver.Start(&mockDriverEventListener{eventHandlerFunc: func(de hardware.DriverEvent) {
+		wasExpectedEventFired = de.Type() == hardware.SwitchMachineAdded && de.State().Position() == switchmachine.PositionUnknown && de.Id() == switchmachine.Id(0)
+		waitChan <- true
+	}})
+	eventTrigger <- time.Now()
+	<-waitChan
+	if !wasExpectedEventFired {
+		t.Fail()
+	}
+}
+
+func TestThatHavingSwitchMachineConnectOnId0InPosition0CausesSwitchMachineAddedEventToBeFiredWithCorrectPosition(t *testing.T) {
+	wasExpectedEventFired := false
+	eventTrigger := make(chan time.Time)
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.rxFunc = func(w, r []byte) error {
+		copy(r, []byte{position0Port03 << (numBitsPerPort * port0RxBitIndex)})
+		return nil
+	}
+	driver.rxTrigger = eventTrigger
+	driver.Start(&mockDriverEventListener{eventHandlerFunc: func(de hardware.DriverEvent) {
+		wasExpectedEventFired = de.Type() == hardware.SwitchMachineAdded && de.State().Position() == switchmachine.Position0 && de.Id() == switchmachine.Id(0)
+		waitChan <- true
+	}})
+	eventTrigger <- time.Now()
+	<-waitChan
+	if !wasExpectedEventFired {
+		t.Fail()
+	}
+}
+
+func TestThatUpdatingSwitchMachineConnectOnId0FromPosition0To1CausesUpdateEventToBeFiredWithPosition1(t *testing.T) {
+	wasExpectedEventFired := false
+	eventTrigger := make(chan time.Time)
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.rxFunc = func(w, r []byte) error {
+		copy(r, []byte{position0Port03 << (numBitsPerPort * port0RxBitIndex)})
+		return nil
+	}
+	driver.rxTrigger = eventTrigger
+	driver.Start(&mockDriverEventListener{eventHandlerFunc: func(de hardware.DriverEvent) {
+		wasExpectedEventFired = de.Type() == hardware.SwitchMachinePositionChanged && de.State().Position() == switchmachine.Position1 && de.Id() == switchmachine.Id(0)
+		if wasExpectedEventFired {
+			waitChan <- true
+		}
+	}})
+	eventTrigger <- time.Now()
+
+	driver.rxFunc = func(w, r []byte) error {
+		copy(r, []byte{position1Port03 << (numBitsPerPort * port0RxBitIndex)})
+		return nil
+	}
+
+	eventTrigger <- time.Now()
+
+	<-waitChan
+	if !wasExpectedEventFired {
+		t.Fail()
+	}
+}
+
+func TestThatUpdatingSwitchMachineConnectOnId0FromPosition0To1CausesRemovedEventToBeFired(t *testing.T) {
+	wasExpectedEventFired := false
+	eventTrigger := make(chan time.Time)
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.rxFunc = func(w, r []byte) error {
+		copy(r, []byte{position0Port03 << (numBitsPerPort * port0RxBitIndex)})
+		return nil
+	}
+	driver.rxTrigger = eventTrigger
+	driver.Start(&mockDriverEventListener{eventHandlerFunc: func(de hardware.DriverEvent) {
+		wasExpectedEventFired = de.Type() == hardware.SwitchMachineRemoved && de.Id() == switchmachine.Id(0)
+		if wasExpectedEventFired {
+			waitChan <- true
+		}
+	}})
+	eventTrigger <- time.Now()
+
+	driver.rxFunc = func(w, r []byte) error {
+		copy(r, []byte{positionDisconnected << (numBitsPerPort * port0RxBitIndex)})
+		return nil
+	}
+
+	eventTrigger <- time.Now()
+
+	<-waitChan
+	if !wasExpectedEventFired {
+		t.Fail()
+	}
+}
+
+//------------------------------------UpdateSwitchMachine----------------------------------
+func TestThatUpdatingGPIO0OnPort0Causes0x10ToBeWrittenForCorrectByte(t *testing.T) {
+	wasTxWrittenAsExpected := false
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.Start(&mockDriverEventListener{})
+	idUnderTest := switchmachine.Id(0)
+	driver.txFunc = func(w, r []byte) error {
+		byteIndex := getTxIndexFromBufferLengthAndId(len(driver.txBuffer), idUnderTest)
+		if w[byteIndex] == 0x10 {
+			wasTxWrittenAsExpected = true
+			waitChan <- true
+		}
+		return nil
+	}
+	driver.UpdateSwitchMachine(switchmachine.NewState(idUnderTest, switchmachine.PositionUnknown, switchmachine.MotorStateIdle, switchmachine.GPIOOn, switchmachine.GPIOOFF))
+
+	<-waitChan
+	if !wasTxWrittenAsExpected {
+		t.Fail()
+	}
+}
+
+func TestThatUpdatingGPIO1OnPort0Causes0x20ToBeWrittenForCorrectByte(t *testing.T) {
+	wasTxWrittenAsExpected := false
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.Start(&mockDriverEventListener{})
+	idUnderTest := switchmachine.Id(0)
+	driver.txFunc = func(w, r []byte) error {
+		byteIndex := getTxIndexFromBufferLengthAndId(len(driver.txBuffer), idUnderTest)
+		if w[byteIndex] == 0x20 {
+			wasTxWrittenAsExpected = true
+			waitChan <- true
+		}
+		return nil
+	}
+	driver.UpdateSwitchMachine(switchmachine.NewState(idUnderTest, switchmachine.PositionUnknown, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOn))
+
+	<-waitChan
+	if !wasTxWrittenAsExpected {
+		t.Fail()
+	}
+}
+
+func TestThatUpdatingBothGPIOOnPort0Causes0x20ToBeWrittenForCorrectByte(t *testing.T) {
+	wasTxWrittenAsExpected := false
+	waitChan := make(chan bool)
+	driver := getBaseDriverWithAllNOOP()
+	driver.Start(&mockDriverEventListener{})
+	idUnderTest := switchmachine.Id(0)
+	driver.txFunc = func(w, r []byte) error {
+		byteIndex := getTxIndexFromBufferLengthAndId(len(driver.txBuffer), idUnderTest)
+		if w[byteIndex] == 0x30 {
+			wasTxWrittenAsExpected = true
+			waitChan <- true
+		}
+		return nil
+	}
+	driver.UpdateSwitchMachine(switchmachine.NewState(idUnderTest, switchmachine.PositionUnknown, switchmachine.MotorStateIdle, switchmachine.GPIOOn, switchmachine.GPIOOn))
+
+	<-waitChan
+	if !wasTxWrittenAsExpected {
+		t.Fail()
+	}
+}
+
+func getBaseDriverWithAllNOOP() *baseTortoiseControllerDriver {
+	driver := &baseTortoiseControllerDriver{}
+	driver.closeFunc = noopCloseFunc
+	driver.rxFunc = noopTRXFunc
+	driver.txFunc = noopTRXFunc
+
+	return driver
+}
+
+//--------------------------------mockDriverEventListener-----------------------
+
+type mockDriverEventListener struct {
+	eventHandlerFunc func(hardware.DriverEvent)
+}
+
+func (this *mockDriverEventListener) HandleDriverEvent(e hardware.DriverEvent) {
+	if this.eventHandlerFunc != nil {
+		this.eventHandlerFunc(e)
 	}
 }

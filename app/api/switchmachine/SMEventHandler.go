@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"log"
 
-	apimodel "github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 	"github.com/ZacharyDuve/eventsocket"
 	"github.com/ZacharyDuve/serverid"
 	"github.com/gorilla/mux"
@@ -22,45 +23,16 @@ func RegsiterEventHandler(r *mux.Router, c controller.TortoiseController) {
 	if err != nil {
 		panic(err)
 	}
-	c.SetSwitchMachineAddedListenerFunc(func(s model.SwitchMachineState) {
-		jsonSMEvent := mapSMStateToJSONSMEventData(s)
+	c.SetSwitchMachineEventListenerFunc(func(sme event.SwitchMachineEvent) {
+		jsonSMEvent := mapSMStateToJSONSMEventData(sme.State())
+		eventType := mapSMEventTypeToAPISMEventType(sme.Type())
 
 		data, err := json.Marshal(jsonSMEvent)
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		e, err := eventsocket.NewEvent(SMAdded, idSvc.GetServerId(), string(data))
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		eventServer.Send(e)
-	})
-	c.SetSwitchMachineRemovedListenerFunc(func(smi model.SwitchMachineId) {
-		jsonSMEvent := &jsonSMEventData{Id: apimodel.SwitchMachineId(smi)}
-
-		data, err := json.Marshal(jsonSMEvent)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		e, err := eventsocket.NewEvent(SMRemoved, idSvc.GetServerId(), string(data))
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		eventServer.Send(e)
-	})
-	c.SetSwitchMachineUpdatedListenerFunc(func(s model.SwitchMachineState) {
-		jsonSMEvent := mapSMStateToJSONSMEventData(s)
-
-		data, err := json.Marshal(jsonSMEvent)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		e, err := eventsocket.NewEvent(SMUpdated, idSvc.GetServerId(), string(data))
+		e, err := eventsocket.NewEvent(eventType, idSvc.GetServerId(), string(data))
 		if err != nil {
 			log.Println(err)
 			return
@@ -70,12 +42,25 @@ func RegsiterEventHandler(r *mux.Router, c controller.TortoiseController) {
 	r.HandleFunc(eventHandlerSubPath, eventServer.ServeHTTP)
 }
 
-func mapSMStateToJSONSMEventData(s model.SwitchMachineState) *jsonSMEventData {
+func mapSMStateToJSONSMEventData(s switchmachine.State) *jsonSMEventData {
 	data := &jsonSMEventData{}
-	data.Id = apimodel.SwitchMachineId(s.Id())
-	data.Position = apimodel.MapModelPosToApiPos(s.Position())
-	data.Motor = apimodel.MapModelMStateToAPIMState(s.MotorState())
-	data.GPIO0 = apimodel.MapModelGPIOToAPI(s.GPIO0State())
-	data.GPIO1 = apimodel.MapModelGPIOToAPI(s.GPIO1State())
+	data.Id = model.SwitchMachineId(s.Id())
+	data.Position = model.MapModelPosToApiPos(s.Position())
+	data.Motor = model.MapModelMStateToAPIMState(s.MotorState())
+	data.GPIO0 = model.MapModelGPIOToAPI(s.GPIO0State())
+	data.GPIO1 = model.MapModelGPIOToAPI(s.GPIO1State())
 	return data
+}
+
+func mapSMEventTypeToAPISMEventType(t event.EventType) string {
+	switch t {
+	case event.SwitchMachineAdded:
+		return SMAdded
+	case event.SwitchMachineUpdated:
+		return SMUpdated
+	case event.SwitchMachineRemoved:
+		return SMRemoved
+	default:
+		panic("Unable to convert event.EventType to SMEvent")
+	}
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 const (
@@ -13,27 +13,27 @@ const (
 )
 
 type SwitchMachineStore interface {
-	AddSwitchMachine(model.SwitchMachineState) error
-	HasSwitchMachine(model.SwitchMachineId) bool
-	GetSwitchMachineById(model.SwitchMachineId) model.SwitchMachineState
-	GetAll() []model.SwitchMachineState
-	RemoveSwitchMachine(model.SwitchMachineId) error
-	UpdateSwitchMachine(model.SwitchMachineState) error
+	AddSwitchMachine(switchmachine.State) error
+	HasSwitchMachine(switchmachine.Id) bool
+	GetSwitchMachineById(switchmachine.Id) switchmachine.State
+	GetAll() []switchmachine.State
+	RemoveSwitchMachine(switchmachine.Id) (switchmachine.State, error)
+	UpdateSwitchMachine(switchmachine.State) error
 }
 
 type switchMachineStoreImpl struct {
-	switchMachines map[model.SwitchMachineId]model.SwitchMachineState
+	switchMachines map[switchmachine.Id]switchmachine.State
 	rwLock         *sync.RWMutex
 }
 
 func NewSwitchMachineStore() SwitchMachineStore {
 	smStore := &switchMachineStoreImpl{}
 	smStore.rwLock = &sync.RWMutex{}
-	smStore.switchMachines = make(map[model.SwitchMachineId]model.SwitchMachineState)
+	smStore.switchMachines = make(map[switchmachine.Id]switchmachine.State)
 	return smStore
 }
 
-func (this *switchMachineStoreImpl) AddSwitchMachine(newSwitchMachine model.SwitchMachineState) error {
+func (this *switchMachineStoreImpl) AddSwitchMachine(newSwitchMachine switchmachine.State) error {
 	var err error
 	if this.HasSwitchMachine(newSwitchMachine.Id()) {
 		err = newAlreadyHaveSwitchMachineError()
@@ -46,35 +46,37 @@ func (this *switchMachineStoreImpl) AddSwitchMachine(newSwitchMachine model.Swit
 	return err
 }
 
-func (this *switchMachineStoreImpl) HasSwitchMachine(sMachineId model.SwitchMachineId) bool {
+func (this *switchMachineStoreImpl) HasSwitchMachine(sMachineId switchmachine.Id) bool {
 	this.rwLock.RLock()
 	_, ok := this.switchMachines[sMachineId]
 	this.rwLock.RUnlock()
 	return ok
 }
 
-func (this *switchMachineStoreImpl) GetSwitchMachineById(sMachineId model.SwitchMachineId) model.SwitchMachineState {
+func (this *switchMachineStoreImpl) GetSwitchMachineById(sMachineId switchmachine.Id) switchmachine.State {
 	this.rwLock.RLock()
 	sm, _ := this.switchMachines[sMachineId]
 	this.rwLock.RUnlock()
 	return sm
 }
 
-func (this *switchMachineStoreImpl) RemoveSwitchMachine(smId model.SwitchMachineId) error {
+func (this *switchMachineStoreImpl) RemoveSwitchMachine(smId switchmachine.Id) (switchmachine.State, error) {
 	var err error
+	var lastState switchmachine.State
 
 	if !this.HasSwitchMachine(smId) {
 		err = newDoesNotContainSwitchMacineWithIdError()
 	} else {
 		this.rwLock.Lock()
+		lastState, _ = this.switchMachines[smId]
 		delete(this.switchMachines, smId)
 		this.rwLock.Unlock()
 	}
 
-	return err
+	return lastState, err
 }
 
-func (this *switchMachineStoreImpl) UpdateSwitchMachine(sm model.SwitchMachineState) error {
+func (this *switchMachineStoreImpl) UpdateSwitchMachine(sm switchmachine.State) error {
 	var err error
 	this.rwLock.RLock()
 	contains := this.HasSwitchMachine(sm.Id())
@@ -89,9 +91,9 @@ func (this *switchMachineStoreImpl) UpdateSwitchMachine(sm model.SwitchMachineSt
 	return err
 }
 
-func (this *switchMachineStoreImpl) GetAll() []model.SwitchMachineState {
+func (this *switchMachineStoreImpl) GetAll() []switchmachine.State {
 	this.rwLock.RLock()
-	allSM := make([]model.SwitchMachineState, 0, len(this.switchMachines))
+	allSM := make([]switchmachine.State, 0, len(this.switchMachines))
 	for _, curState := range this.switchMachines {
 		allSM = append(allSM, curState)
 	}

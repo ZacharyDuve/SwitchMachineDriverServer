@@ -4,7 +4,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/conn/v3/spi"
@@ -29,6 +28,7 @@ type piTortoiseControllerDriver struct {
 	readSPIPort     spi.PortCloser
 	readConn        spi.Conn
 	busUpdateTicker *time.Ticker
+	//baseTortoiseControllerDriver
 }
 
 func init() {
@@ -39,13 +39,15 @@ func init() {
 	}
 }
 
-func NewPiTortoiseControllerDriver(smEventListener event.SwitchMachineEventListener) (piDriver hardware.SwitchMachineDriver, err error) {
-	return NewPiTortoiseControllerDriverWithSPIDevPath(spiTxDevPath, spiRxDevPath, smEventListener)
+func NewPiTortoiseControllerDriver() (piDriver hardware.Driver, err error) {
+	return NewPiTortoiseControllerDriverWithSPIDevPath(spiTxDevPath, spiRxDevPath)
 }
 
-func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, smEventListener event.SwitchMachineEventListener) (hardware.SwitchMachineDriver, error) {
+func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string) (hardware.Driver, error) {
+	driver := &baseTortoiseControllerDriver{}
 	log.Println("NewPiTortoiseControllerDriverWithSPIDevPath called")
 	ticker := time.NewTicker(busUpdateDuration)
+	driver.rxTrigger = ticker.C
 
 	txFunc, txCloseFunc, txOpenErr := setupConnection(txDevPath, spiTxMode)
 	log.Println("TX SPI connections setup.")
@@ -53,12 +55,17 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, sm
 		log.Println("Error opening tx line", txOpenErr)
 		return nil, txOpenErr
 	}
+
+	driver.txFunc = txFunc
+
 	rxFunc, rxCloseFunc, rxOpenErr := setupConnection(rxDevPath, spiRxMode)
 	log.Println("RX SPI connections setup.")
 	if rxOpenErr != nil {
 		log.Println("Error opening rx line", rxOpenErr)
 		return nil, rxOpenErr
 	}
+
+	driver.rxFunc = rxFunc
 
 	piCloseFunc := func() (clsErr error) {
 		ticker.Stop()
@@ -67,7 +74,9 @@ func NewPiTortoiseControllerDriverWithSPIDevPath(txDevPath, rxDevPath string, sm
 		return nil
 	}
 
-	return newBaseTortiseControllerDriver(txFunc, rxFunc, piCloseFunc, ticker.C, smEventListener)
+	driver.closeFunc = piCloseFunc
+
+	return driver, nil
 }
 
 func setupConnection(spiDevPath string, m spi.Mode) (xFunc func(w, r []byte) error, clsFunc func() error, err error) {

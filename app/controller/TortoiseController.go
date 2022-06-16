@@ -2,59 +2,43 @@ package controller
 
 import (
 	"errors"
-	"log"
+	"fmt"
 	"time"
 
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware/tortoise"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/persistance"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 const (
-	switchMachineNotExistErrorMessage string        = "Switch Machine with matching Id does not exist"
+	switchMachineNotExistErrorMessage string        = "Switch Machine with matching Id %d does not exist"
 	defaultMotorRunTime               time.Duration = time.Second * 4
 )
 
 type TortoiseController interface {
-	SetSwitchMachinePosition(id model.SwitchMachineId, pos model.SwitchMachinePosition) error
-	SetSwitchMachineGPIO(id model.SwitchMachineId, gpio0, gpio1 model.GPIOState) error
-	GetSwitchMachines() []model.SwitchMachineState
-	GetSwitchMachineById(id model.SwitchMachineId) (model.SwitchMachineState, error)
-	SetSwitchMachineAddedListenerFunc(func(model.SwitchMachineState))
-	SetSwitchMachineRemovedListenerFunc(func(model.SwitchMachineId))
-	SetSwitchMachineUpdatedListenerFunc(func(model.SwitchMachineState))
+	UpdateSwitchMachine(switchmachine.State) error
+	GetSwitchMachines() []switchmachine.State
+	GetSwitchMachineById(id switchmachine.Id) (switchmachine.State, error)
+	SetSwitchMachineEventListenerFunc(func(event.SwitchMachineEvent))
+	HandleDriverEvent(dE hardware.DriverEvent)
 }
 
 type tortoiseControllerImpl struct {
-	driver                hardware.SwitchMachineDriver
-	existingSMStates      persistance.SwitchMachineStore
-	smAddedListenerFunc   func(model.SwitchMachineState)
-	smRemovedListenerFunc func(model.SwitchMachineId)
-	smUpdatedListenerFunc func(model.SwitchMachineState)
+	driver              hardware.Driver
+	existingSMStates    persistance.SwitchMachineStore
+	smEventListenerFunc func(event.SwitchMachineEvent)
 }
 
 //Wrapping the internal testable call as an external facing interface to restrict functions
-func NewTortoiseController() TortoiseController {
-	controller := newTortoiseController()
-	var err error
-	controller.driver, err = tortoise.NewPiTortoiseControllerDriver(controller)
-
-	if err != nil {
-		panic(err)
+func NewTortoiseController(driver hardware.Driver) TortoiseController {
+	if driver == nil {
+		panic("driver is required for NewTortoiseController")
 	}
-
-	return controller
-}
-
-func NewTortoiseControllerWithMockDriver(txDataOut, rxDataIn []byte) TortoiseController {
 	controller := newTortoiseController()
-	var err error
-	controller.driver, err = tortoise.NewMockTortoiseControllerDriver(controller, txDataOut, rxDataIn)
 
-	if err != nil {
-		panic(err)
-	}
+	controller.driver = driver
+	driver.Start(controller)
 
 	return controller
 }
@@ -67,154 +51,107 @@ func newTortoiseController() *tortoiseControllerImpl {
 	return controller
 }
 
-func (this *tortoiseControllerImpl) SetSwitchMachinePosition(id model.SwitchMachineId, pos model.SwitchMachinePosition) error {
+func (this *tortoiseControllerImpl) UpdateSwitchMachine(newState switchmachine.State) error {
 	var err error
-
-	if !this.existingSMStates.HasSwitchMachine(id) {
-		err = newSwitchMachineNotExistError()
-	} else {
-		log.Println("Updating position for switch machine", id)
-		curState := this.existingSMStates.GetSwitchMachineById(id)
-		log.Println("curState:", curState)
-		newState := model.NewSwitchMachineState(id, pos, getMotorStateForToPosition(pos), curState.GPIO0State(), curState.GPIO1State())
-		log.Println("newState:", newState)
+	curState := this.existingSMStates.GetSwitchMachineById(newState.Id())
+	if curState == nil {
+		//We don't have a switchmachine for this id
+		err = newSwitchMachineNotExistError(newState.Id())
+	} else if !areUpdateableFieldsEqual(curState, newState) || isMotorRunningToOppositePosition(newState, curState) {
 		this.driver.UpdateSwitchMachine(newState)
-		this.createStopMotorCallback(id)
-		this.existingSMStates.UpdateSwitchMachine(newState)
+		//If we just told it to change position then we need to stop it at some point
+		if curState.Position() != newState.Position() {
+			this.createStopMotorCallback(curState.Id())
+		}
 	}
-
 	return err
 }
 
-func getMotorStateForToPosition(pos model.SwitchMachinePosition) model.SwitchMachineMotorState {
-	if pos == model.Position0 {
-		return model.MotorStateToPos0
-	} else if pos == model.Position1 {
-		return model.MotorStateToPos1
-	} else {
-		return model.MotorStateIdle
-	}
+//Trying to cover the case were we are where we want but we are moving away from it
+func isMotorRunningToOppositePosition(newS, curS switchmachine.State) bool {
+	return newS.Position() == switchmachine.Position0 && curS.MotorState() == switchmachine.MotorStateToPos1 ||
+		newS.Position() == switchmachine.Position1 && curS.MotorState() == switchmachine.MotorStateToPos0
 }
 
-func (this *tortoiseControllerImpl) SetSwitchMachineGPIO(id model.SwitchMachineId, gpio0, gpio1 model.GPIOState) error {
-	var err error
-	if !this.existingSMStates.HasSwitchMachine(id) {
-		err = newSwitchMachineNotExistError()
-	} else {
-		log.Println("Updating GPIO for switch machine", id)
-		curState := this.existingSMStates.GetSwitchMachineById(id)
-		log.Println("curState:", curState)
-		newState := model.NewSwitchMachineState(id, curState.Position(), curState.MotorState(), gpio0, gpio1)
-
-		log.Println("newState:", newState)
-
-		this.driver.UpdateSwitchMachine(newState)
-
-		this.existingSMStates.UpdateSwitchMachine(newState)
-	}
-
-	return err
-}
-
-func (this *tortoiseControllerImpl) GetSwitchMachines() []model.SwitchMachineState {
+func (this *tortoiseControllerImpl) GetSwitchMachines() []switchmachine.State {
 	return this.existingSMStates.GetAll()
 }
 
-func (this *tortoiseControllerImpl) GetSwitchMachineById(id model.SwitchMachineId) (model.SwitchMachineState, error) {
+func (this *tortoiseControllerImpl) GetSwitchMachineById(id switchmachine.Id) (switchmachine.State, error) {
 	sm := this.existingSMStates.GetSwitchMachineById(id)
 	var err error
 	if sm == nil {
-		err = newSwitchMachineNotExistError()
+		err = newSwitchMachineNotExistError(id)
 	}
 
 	return sm, err
 }
 
-func (this *tortoiseControllerImpl) createStopMotorCallback(id model.SwitchMachineId) {
-	go func() {
-		time.Sleep(defaultMotorRunTime)
-		stateBeforeMotorStop := this.existingSMStates.GetSwitchMachineById(id)
-		stoppedMotorState := model.NewSwitchMachineState(id,
-			stateBeforeMotorStop.Position(),
-			model.MotorStateIdle,
-			stateBeforeMotorStop.GPIO0State(),
-			stateBeforeMotorStop.GPIO1State())
-		log.Println("Stopping motor with id:", id)
-		if this.existingSMStates.HasSwitchMachine(id) {
-			this.driver.UpdateSwitchMachine(stoppedMotorState)
-			this.existingSMStates.UpdateSwitchMachine(stoppedMotorState)
+func (this *tortoiseControllerImpl) createStopMotorCallback(id switchmachine.Id) {
+	go this.stopMotorCallbackFunc(id, defaultMotorRunTime)
+}
+
+func (this *tortoiseControllerImpl) stopMotorCallbackFunc(id switchmachine.Id, delay time.Duration) {
+	if delay > 0 {
+		time.Sleep(delay)
+	}
+	stateBeforeMotorStop := this.existingSMStates.GetSwitchMachineById(id)
+	stoppedMotorState := switchmachine.NewState(id,
+		stateBeforeMotorStop.Position(),
+		switchmachine.MotorStateIdle,
+		stateBeforeMotorStop.GPIO0State(),
+		stateBeforeMotorStop.GPIO1State())
+	//log.Println("Stopping motor with id:", id)
+	if this.existingSMStates.HasSwitchMachine(id) {
+		this.driver.UpdateSwitchMachine(stoppedMotorState)
+		this.existingSMStates.UpdateSwitchMachine(stoppedMotorState)
+	}
+}
+
+func (this *tortoiseControllerImpl) SetSwitchMachineEventListenerFunc(smEventListenFunc func(event.SwitchMachineEvent)) {
+	this.smEventListenerFunc = smEventListenFunc
+}
+
+func (this *tortoiseControllerImpl) HandleDriverEvent(dE hardware.DriverEvent) {
+	var err error
+	var e event.SwitchMachineEvent
+	if dE.Type() == hardware.SwitchMachineAdded {
+		err = this.existingSMStates.AddSwitchMachine(dE.State())
+		if err == nil {
+			e = event.NewSwitchMachineAddedEvent(dE.State())
 		}
-	}()
-}
-
-func isMotorRunningToOpposingPosition(existingState model.SwitchMachineState, req SwitchMachineUpdateRequest) bool {
-	return existingState.MotorState() == model.MotorStateToPos0 && req.Position() == model.Position1 ||
-		existingState.MotorState() == model.MotorStateToPos1 && req.Position() == model.Position0
-}
-
-func createNewStateFromRequest(req SwitchMachineUpdateRequest) model.SwitchMachineState {
-	var motorState model.SwitchMachineMotorState
-
-	if req.Position() == model.Position0 {
-		motorState = model.MotorStateToPos0
-	} else {
-		motorState = model.MotorStateToPos1
+	} else if dE.Type() == hardware.SwitchMachinePositionChanged {
+		err = this.existingSMStates.UpdateSwitchMachine(dE.State())
+		if err == nil {
+			e = event.NewSwitchMachineUpdatedEvent(dE.State())
+		}
+	} else if dE.Type() == hardware.SwitchMachineRemoved {
+		var lastState switchmachine.State
+		lastState, err = this.existingSMStates.RemoveSwitchMachine(dE.Id())
+		if err == nil {
+			e = event.NewSwitchMachineRemovedEvent(lastState)
+		}
 	}
-	//Position doesn't matter as it shouldn't be used in requesting to the driver
-	return model.NewSwitchMachineState(req.Id(), req.Position(), motorState, req.GPIO0State(), req.GPIO1State())
-}
-
-func (this *tortoiseControllerImpl) SwitchMachineAdded(sm model.SwitchMachineState) {
-	err := this.existingSMStates.AddSwitchMachine(sm)
 
 	if err != nil {
 		panic(err)
 	}
 
-	if this.smAddedListenerFunc != nil {
-		this.smAddedListenerFunc(sm)
+	if this.smEventListenerFunc != nil {
+		this.smEventListenerFunc(e)
 	}
 }
 
-func (this *tortoiseControllerImpl) SwitchMachineUpdated(sm model.SwitchMachineState) {
-	err := this.existingSMStates.UpdateSwitchMachine(sm)
-
-	if err != nil {
-		panic(err)
-	}
-
-	if this.smUpdatedListenerFunc != nil {
-		this.smUpdatedListenerFunc(sm)
-	}
-}
-
-func (this *tortoiseControllerImpl) SwitchMachineRemoved(smId model.SwitchMachineId) {
-	err := this.existingSMStates.RemoveSwitchMachine(smId)
-
-	if err != nil {
-		panic(err)
-	}
-
-	if this.smRemovedListenerFunc != nil {
-		this.smRemovedListenerFunc(smId)
-	}
-}
-
-func (this *tortoiseControllerImpl) SetSwitchMachineAddedListenerFunc(addLFunc func(model.SwitchMachineState)) {
-	this.smAddedListenerFunc = addLFunc
-}
-
-func (this *tortoiseControllerImpl) SetSwitchMachineRemovedListenerFunc(rmvLFunc func(model.SwitchMachineId)) {
-	this.smRemovedListenerFunc = rmvLFunc
-}
-func (this *tortoiseControllerImpl) SetSwitchMachineUpdatedListenerFunc(updtLFunc func(model.SwitchMachineState)) {
-	this.smUpdatedListenerFunc = updtLFunc
-}
-
-func newSwitchMachineNotExistError() error {
-	return errors.New(switchMachineNotExistErrorMessage)
+func newSwitchMachineNotExistError(id switchmachine.Id) error {
+	return errors.New(fmt.Sprintf(switchMachineNotExistErrorMessage, id))
 }
 
 func IsSwitchMachineNotExistError(err error) bool {
 	return err.Error() == switchMachineNotExistErrorMessage
+}
+
+func areUpdateableFieldsEqual(s0, s1 switchmachine.State) bool {
+	return s0.GPIO0State() == s1.GPIO0State() &&
+		s0.GPIO1State() == s1.GPIO1State() &&
+		s0.Position() == s1.Position()
 }

@@ -1,6 +1,8 @@
 package model
 
-import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+import (
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+)
 
 type SwitchMachineMotorState string
 
@@ -12,12 +14,12 @@ const (
 	BRAKE         SwitchMachineMotorState = "brake"
 )
 
-func MapModelMStateToAPIMState(mS model.SwitchMachineMotorState) SwitchMachineMotorState {
-	if mS == model.MotorStateBrake {
+func MapModelMStateToAPIMState(mS switchmachine.MotorState) SwitchMachineMotorState {
+	if mS == switchmachine.MotorStateBrake {
 		return BRAKE
-	} else if mS == model.MotorStateToPos0 {
+	} else if mS == switchmachine.MotorStateToPos0 {
 		return TO_POSITION_0
-	} else if mS == model.MotorStateToPos1 {
+	} else if mS == switchmachine.MotorStateToPos1 {
 		return TO_POSITION_1
 	} else {
 		return IDLE

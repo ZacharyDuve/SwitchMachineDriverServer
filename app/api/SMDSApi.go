@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net"
 	"net/http"
 	"strconv"
@@ -16,8 +17,8 @@ import (
 const (
 	ApiName          string = "SMDriverServer"
 	ApiVersionMajor  uint   = 0
-	ApiVersionMinor  uint   = 9
-	ApiVersionBugFix uint   = 5
+	ApiVersionMinor  uint   = 10
+	ApiVersionBugFix uint   = 1
 )
 
 type smdsAPI struct {
@@ -26,6 +27,7 @@ type smdsAPI struct {
 }
 
 func NewSMDSApi() *smdsAPI {
+	log.Println("Start Creating NewSMDSApi")
 	api := &smdsAPI{}
 	reg, err := apireg.NewRegistry(environment.GetCurrent())
 	if err != nil {
@@ -39,6 +41,7 @@ func NewSMDSApi() *smdsAPI {
 	}
 	api.router.HandleFunc(serverid.GetHandlerFuncFromServerIdService(sIdSvc))
 	switchmachine.NewSwitchMachineHandler(api.router)
+	log.Println("End Creating NewSMDSApi")
 	return api
 }
 

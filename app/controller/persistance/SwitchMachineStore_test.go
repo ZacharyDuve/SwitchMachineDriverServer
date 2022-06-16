@@ -3,7 +3,7 @@ package persistance
 import (
 	"testing"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 func TestNewSwitchMachineStoreStartsNonNil(t *testing.T) {
@@ -50,7 +50,7 @@ func TestSwitchMachineStoreReturnsErrorWhenAddingADuplicatSwitchMachine(t *testi
 }
 
 func TestHasSwitchMachineReturnsFalseWhenSwitchMachineWithIdDoesNotExistInStore(t *testing.T) {
-	idUnderTest := model.SwitchMachineId(1)
+	idUnderTest := switchmachine.Id(1)
 	smStore := NewSwitchMachineStore()
 	if smStore.HasSwitchMachine(idUnderTest) {
 		t.Fail()
@@ -58,8 +58,8 @@ func TestHasSwitchMachineReturnsFalseWhenSwitchMachineWithIdDoesNotExistInStore(
 }
 
 func TestHasSwitchMachineReturnsTrueWhenSwitchMachineWithIdDoesExistInStore(t *testing.T) {
-	idUnderTest := model.SwitchMachineId(1)
-	sm := model.NewSwitchMachineState(idUnderTest, model.Position0, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+	idUnderTest := switchmachine.Id(1)
+	sm := switchmachine.NewState(idUnderTest, switchmachine.Position0, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 	smStore := NewSwitchMachineStore()
 	smStore.AddSwitchMachine(sm)
 	if !smStore.HasSwitchMachine(idUnderTest) {
@@ -85,42 +85,42 @@ func TestUpdateSwitchMachineDoesNotReturnErrorWhenSwitchMachineDoesExistInStore(
 }
 
 func TestGetSwitchMachineAfterUpdatingReturnsNewState(t *testing.T) {
-	idUnderTest := model.SwitchMachineId(1)
-	origState := model.NewSwitchMachineState(idUnderTest, model.Position0, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+	idUnderTest := switchmachine.Id(1)
+	origState := switchmachine.NewState(idUnderTest, switchmachine.Position0, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 
 	smStore := NewSwitchMachineStore()
 	smStore.AddSwitchMachine(origState)
-	nextState := model.NewSwitchMachineState(idUnderTest, model.Position1, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+	nextState := switchmachine.NewState(idUnderTest, switchmachine.Position1, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 	smStore.UpdateSwitchMachine(nextState)
 	lookedUpState := smStore.GetSwitchMachineById(idUnderTest)
-	if !model.SwitchMachineStatesEqual(nextState, lookedUpState) {
+	if !switchmachine.StatesEqual(nextState, lookedUpState) {
 		t.Fail()
 	}
 }
 
 func TestRemoveSwitchMachineReturnsErrorIfSwitchMachineWithIdDoesNotExist(t *testing.T) {
-	idUnderTest := model.SwitchMachineId(1)
+	idUnderTest := switchmachine.Id(1)
 	smStore := NewSwitchMachineStore()
 
-	if smStore.RemoveSwitchMachine(idUnderTest) == nil {
+	if _, err := smStore.RemoveSwitchMachine(idUnderTest); err == nil {
 		t.Fail()
 	}
 }
 
 func TestRemoveSwitchMachineDoesNotReturnErrorWhenSwitchMachineWithIdDoesExist(t *testing.T) {
-	idUnderTest := model.SwitchMachineId(1)
+	idUnderTest := switchmachine.Id(1)
 	smStore := NewSwitchMachineStore()
-	sm := model.NewSwitchMachineState(idUnderTest, model.Position1, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+	sm := switchmachine.NewState(idUnderTest, switchmachine.Position1, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 	smStore.AddSwitchMachine(sm)
-	if smStore.RemoveSwitchMachine(idUnderTest) != nil {
+	if _, err := smStore.RemoveSwitchMachine(idUnderTest); err != nil {
 		t.Fail()
 	}
 }
 
 func TestRemoveSwitchMachineRemovesSwitchMachineWithId(t *testing.T) {
-	idUnderTest := model.SwitchMachineId(1)
+	idUnderTest := switchmachine.Id(1)
 	smStore := NewSwitchMachineStore()
-	sm := model.NewSwitchMachineState(idUnderTest, model.Position1, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+	sm := switchmachine.NewState(idUnderTest, switchmachine.Position1, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 	smStore.AddSwitchMachine(sm)
 	smStore.RemoveSwitchMachine(sm.Id())
 	if smStore.HasSwitchMachine(sm.Id()) {
@@ -129,6 +129,6 @@ func TestRemoveSwitchMachineRemovesSwitchMachineWithId(t *testing.T) {
 
 }
 
-func getSampleSwitchMachineState() model.SwitchMachineState {
-	return model.NewSwitchMachineState(model.SwitchMachineId(0), model.Position0, model.MotorStateIdle, model.GPIOOFF, model.GPIOOFF)
+func getSampleSwitchMachineState() switchmachine.State {
+	return switchmachine.NewState(switchmachine.Id(0), switchmachine.Position0, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 }

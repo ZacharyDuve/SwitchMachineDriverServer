@@ -1,6 +1,8 @@
 package model
 
-import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/model"
+import (
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+)
 
 type GPIOState string
 
@@ -10,8 +12,8 @@ const (
 	ON  GPIOState = "ON"
 )
 
-func MapModelGPIOToAPI(modelGPIO model.GPIOState) GPIOState {
-	if modelGPIO == model.GPIOOFF {
+func MapModelGPIOToAPI(modelGPIO switchmachine.GPIOState) GPIOState {
+	if modelGPIO == switchmachine.GPIOOFF {
 		return OFF
 	} else {
 		return ON
