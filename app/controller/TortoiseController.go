@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
@@ -52,8 +53,10 @@ func newTortoiseController() *tortoiseControllerImpl {
 }
 
 func (this *tortoiseControllerImpl) UpdateSwitchMachine(newState switchmachine.State) error {
+	log.Println("tortoiseControllerImpl-UpdateSwitchMachine called")
 	var err error
 	curState := this.existingSMStates.GetSwitchMachineById(newState.Id())
+	log.Println("newState:", switchmachine.StateToString(newState))
 	if curState == nil {
 		//We don't have a switchmachine for this id
 		err = newSwitchMachineNotExistError(newState.Id())
@@ -129,6 +132,8 @@ func (this *tortoiseControllerImpl) HandleDriverEvent(dE hardware.DriverEvent) {
 		var lastState switchmachine.State
 		lastState, err = this.existingSMStates.RemoveSwitchMachine(dE.Id())
 		if err == nil {
+			log.Println("Reseting output for switchmachine with id:", dE.Id())
+			this.driver.UpdateSwitchMachine(switchmachine.NewState(dE.Id(), lastState.Position(), switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF))
 			e = event.NewSwitchMachineRemovedEvent(lastState)
 		}
 	}

@@ -91,10 +91,12 @@ type baseTortoiseControllerDriver struct {
 }
 
 func (this *baseTortoiseControllerDriver) UpdateSwitchMachine(newState switchmachine.State) {
+	log.Println("BaseTortoiseControllerDriver-UpdateSwitchMachine called")
 	this.newSMStateChan <- newState
 }
 
 func (this *baseTortoiseControllerDriver) Start(driverEventListener hardware.DriverEventListener) {
+	log.Println("Starting the driver")
 	this.driverEventListener = driverEventListener
 	this.initChans()
 	this.initBuffers()
@@ -171,18 +173,26 @@ func (this *baseTortoiseControllerDriver) handleRXByteChange(prevRxByte, curRxBy
 
 			log.Println("curSMId:", curSMId, "wasAttached:", wasAttached, "isAttached", isAttached)
 			//We know we are removed
+			var eventToSend hardware.DriverEvent
 			if wasAttached && !isAttached {
-				this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachineRemovedEvent(curSMId))
+				//this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachineRemovedEvent(curSMId))
+				eventToSend = hardware.NewSwitchMachineRemovedEvent(curSMId)
 			} else {
 				position := getSMPositionFromRxBits(curRxBits, portNumber)
 
 				state := switchmachine.NewState(curSMId, position, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 
 				if !wasAttached {
-					this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachineAddedEvent(curSMId, state))
+					//this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachineAddedEvent(curSMId, state))
+					eventToSend = hardware.NewSwitchMachineAddedEvent(curSMId, state)
 				} else {
 					this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachinePositionChangedEvent(curSMId, state))
+					eventToSend = hardware.NewSwitchMachinePositionChangedEvent(curSMId, state)
 				}
+			}
+
+			if eventToSend != nil {
+				go this.driverEventListener.HandleDriverEvent(eventToSend)
 			}
 
 		}

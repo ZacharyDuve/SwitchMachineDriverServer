@@ -22,7 +22,8 @@ const (
 )
 
 type smdsAPI struct {
-	router      *mux.Router
+	router *mux.Router
+	//apiSubRouter *mux.Router
 	apiRegistry apireg.ApiRegistry
 }
 
@@ -35,12 +36,20 @@ func NewSMDSApi() *smdsAPI {
 	}
 	api.apiRegistry = reg
 	api.router = mux.NewRouter()
+	//Need an API sub router to separate from web
+	apiSubRouter := api.router.PathPrefix("/api").Subrouter()
+	//DO WE WANT ONLY FOR NON PRODS?
+	apiSubRouter.Use(mux.CORSMethodMiddleware(apiSubRouter))
 	sIdSvc, err := serverid.NewFileServerIdService("")
 	if err != nil {
 		panic(err)
 	}
-	api.router.HandleFunc(serverid.GetHandlerFuncFromServerIdService(sIdSvc))
-	switchmachine.NewSwitchMachineHandler(api.router)
+	//Make it so that we can get the server id
+	apiSubRouter.HandleFunc(serverid.GetHandlerFuncFromServerIdService(sIdSvc))
+	//Register the switch machine handler with the api sub router
+	switchmachine.NewSwitchMachineHandler(apiSubRouter)
+	//Need to serve any non api routes as web pages
+	api.router.Handle("/", http.FileServer(http.Dir("web-content")))
 	log.Println("End Creating NewSMDSApi")
 	return api
 }
@@ -55,5 +64,6 @@ func (this *smdsAPI) ListenAndServe(addr string) {
 		panic(err)
 	}
 	this.apiRegistry.RegisterApi(ApiName, &api.Version{Major: ApiVersionMajor, Minor: ApiVersionMinor, BugFix: ApiVersionBugFix}, port)
+	log.Println("Server up and waiting for requests")
 	http.ListenAndServe(addr, this.router)
 }

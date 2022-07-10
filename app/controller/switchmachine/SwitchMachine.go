@@ -1,6 +1,10 @@
 package switchmachine
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"time"
+)
 
 type Id uint16
 
@@ -30,6 +34,7 @@ type State interface {
 	MotorState() MotorState
 	GPIO0State() GPIOState
 	GPIO1State() GPIOState
+	UpdateTime() time.Time
 }
 
 type switchMachineStateImpl struct {
@@ -37,16 +42,17 @@ type switchMachineStateImpl struct {
 	pos          Position
 	motor        MotorState
 	gpio0, gpio1 GPIOState
+	updateTime   time.Time
 }
 
-func NewState(id Id, pos Position, m MotorState, g0, g1 GPIOState) *switchMachineStateImpl {
+func NewState(id Id, pos Position, m MotorState, g0, g1 GPIOState) State {
 	s := &switchMachineStateImpl{}
 	s.id = id
 	s.pos = pos
 	s.motor = m
 	s.gpio0 = g0
 	s.gpio1 = g1
-
+	s.updateTime = time.Now()
 	return s
 }
 
@@ -70,6 +76,10 @@ func (this *switchMachineStateImpl) GPIO1State() GPIOState {
 	return this.gpio1
 }
 
+func (this *switchMachineStateImpl) UpdateTime() time.Time {
+	return this.updateTime
+}
+
 func StatesEqual(sm1, sm2 State) bool {
 	return sm1.Id() == sm2.Id() &&
 		sm1.GPIO0State() == sm2.GPIO0State() &&
@@ -80,6 +90,7 @@ func StatesEqual(sm1, sm2 State) bool {
 
 //----------------------------------- Printing functions for convience
 func StateToString(state State) string {
+	log.Println("state", state)
 	return fmt.Sprintf("Id: %d, Position: %s, Motor: %s, GPIO0: %s, GPIO1: %s", state.Id(),
 		positionToString(state.Position()), motorToString(state.MotorState()), gpioToString(state.GPIO0State()), gpioToString(state.GPIO1State()))
 }

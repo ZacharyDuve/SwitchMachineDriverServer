@@ -1,6 +1,7 @@
 
 #skip the build dir
 build/
+web-content/
 
 .DS_Store
 server-id.json

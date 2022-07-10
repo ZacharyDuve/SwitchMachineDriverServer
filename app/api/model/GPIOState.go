@@ -8,8 +8,8 @@ type GPIOState string
 
 // List of GPIOState
 const (
-	OFF GPIOState = "OFF"
-	ON  GPIOState = "ON"
+	OFF GPIOState = "off"
+	ON  GPIOState = "on"
 )
 
 func MapModelGPIOToAPI(modelGPIO switchmachine.GPIOState) GPIOState {

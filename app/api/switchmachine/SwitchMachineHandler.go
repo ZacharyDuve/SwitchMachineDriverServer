@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -99,21 +100,34 @@ func (this *switchMachineHandler) handleGetSwitchMachine(w http.ResponseWriter, 
 
 func (this *switchMachineHandler) handleUpdateSwitchMachine(w http.ResponseWriter, r *http.Request) {
 
-	switchMachineReq := &apiModel.SwitchMachine{}
-	err := json.NewDecoder(r.Body).Decode(switchMachineReq)
+	switchMachines := make([]*apiModel.SwitchMachine, 0)
+	err := json.NewDecoder(r.Body).Decode(&switchMachines)
+	log.Println("DEBUG -", len(switchMachines))
+	for _, cur := range switchMachines {
+		log.Println("DEBUG -", cur)
+	}
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
+	errors := make([]error, 0)
+	for _, curSMReq := range switchMachines {
+		log.Println("DEBUG -", curSMReq)
+		err = this.controller.UpdateSwitchMachine(curSMReq)
 
-	err = this.controller.UpdateSwitchMachine(switchMachineReq)
-
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		if err != nil {
+			errors = append(errors, err)
+			log.Println(err)
+		}
 	}
+
+	if len(errors) > 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprint(errors)))
+	}
+
 }
 
 func getSMIdFromRequest(r *http.Request) (switchmachine.Id, error) {

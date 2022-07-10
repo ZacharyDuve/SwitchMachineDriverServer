@@ -58,7 +58,7 @@ func createMockDriverImpl() *mockHardwareDriverImpl {
 
 	txFunc := func(w, r []byte) error {
 		driver.txMutex.Lock()
-		fmt.Fprintf(driver.txWriter, "% X", w)
+		fmt.Fprintf(driver.txWriter, "% X\n", w)
 		driver.txMutex.Unlock()
 		return nil
 	}
