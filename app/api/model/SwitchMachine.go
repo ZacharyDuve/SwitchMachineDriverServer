@@ -31,7 +31,7 @@ type SwitchMachine struct {
 
 	Gpio1 GPIOState `json:"gpio1"`
 
-	UpdTime time.Time `json:"updateTime"`
+	UpdTimeMillis int64 `json:"updateTimeMillis"`
 
 	OriginServerId uuid.UUID `json:"originServerId"`
 }
@@ -43,7 +43,7 @@ func NewAPISwitchMachineFromModel(modelSM switchmachine.State) *SwitchMachine {
 	apiSM.Gpio0 = MapModelGPIOToAPI(modelSM.GPIO0State())
 	apiSM.Gpio1 = MapModelGPIOToAPI(modelSM.GPIO1State())
 	apiSM.Motor = MapModelMStateToAPIMState(modelSM.MotorState())
-	apiSM.UpdTime = modelSM.UpdateTime()
+	apiSM.UpdTimeMillis = modelSM.UpdateTime().UnixMilli()
 	apiSM.OriginServerId = serveridSrv.GetServerId()
 	return apiSM
 }
@@ -82,7 +82,7 @@ func (this *SwitchMachine) GPIO1State() switchmachine.GPIOState {
 }
 
 func (this *SwitchMachine) UpdateTime() time.Time {
-	return this.UpdTime
+	return time.UnixMilli(this.UpdTimeMillis)
 }
 
 func mapAPIGPIOStateToHardwareState(apiState GPIOState) switchmachine.GPIOState {
