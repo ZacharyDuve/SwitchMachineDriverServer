@@ -175,7 +175,6 @@ func (this *baseTortoiseControllerDriver) handleRXByteChange(prevRxByte, curRxBy
 			//We know we are removed
 			var eventToSend hardware.DriverEvent
 			if wasAttached && !isAttached {
-				//this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachineRemovedEvent(curSMId))
 				eventToSend = hardware.NewSwitchMachineRemovedEvent(curSMId)
 			} else {
 				position := getSMPositionFromRxBits(curRxBits, portNumber)
@@ -183,10 +182,8 @@ func (this *baseTortoiseControllerDriver) handleRXByteChange(prevRxByte, curRxBy
 				state := switchmachine.NewState(curSMId, position, switchmachine.MotorStateIdle, switchmachine.GPIOOFF, switchmachine.GPIOOFF)
 
 				if !wasAttached {
-					//this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachineAddedEvent(curSMId, state))
 					eventToSend = hardware.NewSwitchMachineAddedEvent(curSMId, state)
 				} else {
-					this.driverEventListener.HandleDriverEvent(hardware.NewSwitchMachinePositionChangedEvent(curSMId, state))
 					eventToSend = hardware.NewSwitchMachinePositionChangedEvent(curSMId, state)
 				}
 			}
@@ -279,8 +276,8 @@ func (this *baseTortoiseControllerDriver) processSMStateUpdate(newState switchma
 	byteIndex := getTxIndexFromBufferLengthAndId(len(this.txBuffer), newState.Id())
 
 	this.txBuffer[byteIndex] = (this.txBuffer[byteIndex] & ^bitMask) | txBits
-	this.handleBusWrite()
 	log.Println("this.txBuffer", this.txBuffer, "byteIndex", byteIndex, "bitMask", bitMask, "txBits", txBits)
+	this.handleBusWrite()
 }
 func getTxIndexFromBufferLengthAndId(bLen int, id switchmachine.Id) uint {
 	return uint(bLen-1) - calcTxByteOffsetFromId(id)

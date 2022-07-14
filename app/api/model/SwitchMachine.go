@@ -55,8 +55,10 @@ func (this *SwitchMachine) Id() switchmachine.Id {
 func (this *SwitchMachine) Position() switchmachine.Position {
 	if this.Pos == Position0 {
 		return switchmachine.Position0
-	} else {
+	} else if this.Pos == Position1 {
 		return switchmachine.Position1
+	} else {
+		return switchmachine.PositionUnknown
 	}
 }
 

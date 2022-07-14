@@ -52,19 +52,36 @@ func newTortoiseController() *tortoiseControllerImpl {
 	return controller
 }
 
-func (this *tortoiseControllerImpl) UpdateSwitchMachine(newState switchmachine.State) error {
+func (this *tortoiseControllerImpl) UpdateSwitchMachine(requestState switchmachine.State) error {
 	log.Println("tortoiseControllerImpl-UpdateSwitchMachine called")
 	var err error
-	curState := this.existingSMStates.GetSwitchMachineById(newState.Id())
-	log.Println("newState:", switchmachine.StateToString(newState))
+	curState := this.existingSMStates.GetSwitchMachineById(requestState.Id())
+	log.Println("requestState:", switchmachine.StateToString(requestState))
+	log.Println("curState:", switchmachine.StateToString(curState))
 	if curState == nil {
 		//We don't have a switchmachine for this id
-		err = newSwitchMachineNotExistError(newState.Id())
-	} else if !areUpdateableFieldsEqual(curState, newState) || isMotorRunningToOppositePosition(newState, curState) {
+		err = newSwitchMachineNotExistError(requestState.Id())
+	} else if !areUpdateableFieldsEqual(curState, requestState) || isMotorRunningToOppositePosition(requestState, curState) {
+		//Figure out if we need to set a new motor state
+		newMotorState := switchmachine.MotorStateIdle
+		if curState.Position() != requestState.Position() {
+			if requestState.Position() == switchmachine.Position0 {
+				newMotorState = switchmachine.MotorStateToPos0
+			} else if requestState.Position() == switchmachine.Position1 {
+				newMotorState = switchmachine.MotorStateToPos1
+			}
+		}
+
+		newState := switchmachine.NewState(requestState.Id(), curState.Position(), newMotorState, requestState.GPIO0State(), requestState.GPIO1State())
+		log.Println("newState:", switchmachine.StateToString(newState))
 		this.driver.UpdateSwitchMachine(newState)
 		//If we just told it to change position then we need to stop it at some point
-		if curState.Position() != newState.Position() {
+		if curState.MotorState() != newState.MotorState() {
 			this.createStopMotorCallback(curState.Id())
+		}
+		if !areGPIOEqual(curState, newState) || curState.MotorState() != newState.MotorState() {
+			this.existingSMStates.UpdateSwitchMachine(newState)
+			this.sendSMEventToListener(event.NewSwitchMachineUpdatedEvent(newState))
 		}
 	}
 	return err
@@ -104,10 +121,10 @@ func (this *tortoiseControllerImpl) stopMotorCallbackFunc(id switchmachine.Id, d
 		switchmachine.MotorStateIdle,
 		stateBeforeMotorStop.GPIO0State(),
 		stateBeforeMotorStop.GPIO1State())
-	//log.Println("Stopping motor with id:", id)
 	if this.existingSMStates.HasSwitchMachine(id) {
 		this.driver.UpdateSwitchMachine(stoppedMotorState)
 		this.existingSMStates.UpdateSwitchMachine(stoppedMotorState)
+		this.sendSMEventToListener(event.NewSwitchMachineUpdatedEvent(stoppedMotorState))
 	}
 }
 
@@ -142,8 +159,12 @@ func (this *tortoiseControllerImpl) HandleDriverEvent(dE hardware.DriverEvent) {
 		panic(err)
 	}
 
+	this.sendSMEventToListener(e)
+}
+
+func (this *tortoiseControllerImpl) sendSMEventToListener(sme event.SwitchMachineEvent) {
 	if this.smEventListenerFunc != nil {
-		this.smEventListenerFunc(e)
+		this.smEventListenerFunc(sme)
 	}
 }
 
@@ -156,7 +177,11 @@ func IsSwitchMachineNotExistError(err error) bool {
 }
 
 func areUpdateableFieldsEqual(s0, s1 switchmachine.State) bool {
-	return s0.GPIO0State() == s1.GPIO0State() &&
-		s0.GPIO1State() == s1.GPIO1State() &&
+	return areGPIOEqual(s0, s1) &&
 		s0.Position() == s1.Position()
+}
+
+func areGPIOEqual(s0, s1 switchmachine.State) bool {
+	return s0.GPIO0State() == s1.GPIO0State() &&
+		s0.GPIO1State() == s1.GPIO1State()
 }
