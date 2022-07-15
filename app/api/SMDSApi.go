@@ -18,7 +18,7 @@ const (
 	ApiName          string = "SMDriverServer"
 	ApiVersionMajor  uint   = 0
 	ApiVersionMinor  uint   = 10
-	ApiVersionBugFix uint   = 1
+	ApiVersionBugFix uint   = 0
 )
 
 type smdsAPI struct {
