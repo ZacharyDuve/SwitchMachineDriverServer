@@ -49,7 +49,7 @@ func NewSMDSApi() *smdsAPI {
 	//Register the switch machine handler with the api sub router
 	switchmachine.NewSwitchMachineHandler(apiSubRouter)
 	//Need to serve any non api routes as web pages
-	api.router.Handle("/", http.FileServer(http.Dir("web-content")))
+	api.router.PathPrefix("/").Handler(http.FileServer(http.Dir("web-content")))
 	log.Println("End Creating NewSMDSApi")
 	return api
 }
@@ -65,5 +65,5 @@ func (this *smdsAPI) ListenAndServe(addr string) {
 	}
 	this.apiRegistry.RegisterApi(ApiName, &api.Version{Major: ApiVersionMajor, Minor: ApiVersionMinor, BugFix: ApiVersionBugFix}, port)
 	log.Println("Server up and waiting for requests")
-	http.ListenAndServe(addr, this.router)
+	log.Fatal(http.ListenAndServe(addr, this.router))
 }
