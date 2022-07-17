@@ -1,6 +1,6 @@
 
 #skip the build dir
-build/
+builds/
 web-content/
 
 .DS_Store

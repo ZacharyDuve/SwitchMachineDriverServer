@@ -14,8 +14,8 @@ import (
 const (
 	spiClockSpeed     physic.Frequency = physic.KiloHertz * 1
 	spiBusDevPath     string           = "/dev/spidev0"
-	spiTxDevPath      string           = spiBusDevPath + ".0"
-	spiRxDevPath      string           = spiBusDevPath + ".1"
+	spiTxDevPath      string           = spiBusDevPath + ".1"
+	spiRxDevPath      string           = spiBusDevPath + ".0"
 	spiTxMode         spi.Mode         = spi.Mode2
 	spiRxMode         spi.Mode         = spi.Mode0
 	spiBitsPerWord    int              = 8
