@@ -2,7 +2,6 @@ package switchmachine
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -90,7 +89,9 @@ func StatesEqual(sm1, sm2 State) bool {
 
 //----------------------------------- Printing functions for convience
 func StateToString(state State) string {
-	log.Println("state", state)
+	if state == nil {
+		return "-nil Switch Machine State-"
+	}
 	return fmt.Sprintf("Id: %d, Position: %s, Motor: %s, GPIO0: %s, GPIO1: %s", state.Id(),
 		positionToString(state.Position()), motorToString(state.MotorState()), gpioToString(state.GPIO0State()), gpioToString(state.GPIO1State()))
 }

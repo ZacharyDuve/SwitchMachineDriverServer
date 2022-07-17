@@ -141,10 +141,16 @@ func (this *tortoiseControllerImpl) HandleDriverEvent(dE hardware.DriverEvent) {
 			e = event.NewSwitchMachineAddedEvent(dE.State())
 		}
 	} else if dE.Type() == hardware.SwitchMachinePositionChanged {
-		err = this.existingSMStates.UpdateSwitchMachine(dE.State())
-		if err == nil {
-			e = event.NewSwitchMachineUpdatedEvent(dE.State())
+		//Need to pull GPIO data as the driver event doesn't contain accurate data
+		prevState := this.existingSMStates.GetSwitchMachineById(dE.Id())
+		if prevState != nil {
+			newState := switchmachine.NewState(prevState.Id(), dE.State().Position(), prevState.MotorState(), prevState.GPIO0State(), prevState.GPIO1State())
+			err = this.existingSMStates.UpdateSwitchMachine(newState)
+			if err == nil {
+				e = event.NewSwitchMachineUpdatedEvent(newState)
+			}
 		}
+
 	} else if dE.Type() == hardware.SwitchMachineRemoved {
 		var lastState switchmachine.State
 		lastState, err = this.existingSMStates.RemoveSwitchMachine(dE.Id())
