@@ -11,12 +11,12 @@ package switchmachine
 // 	"net/http"
 // 	"sync"
 
-// 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
-// 	"github.com/ZacharyDuve/apireg"
-// 	"github.com/ZacharyDuve/apireg/api"
-// 	"github.com/ZacharyDuve/apireg/environment"
-// 	"github.com/ZacharyDuve/apireg/event"
-// 	"github.com/ZacharyDuve/eventsocket"
+// 	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/api/model"
+// 	"git.zmanhobbies.com/software/apireg"
+// 	"git.zmanhobbies.com/software/apireg/api"
+// 	"git.zmanhobbies.com/software/apireg/environment"
+// 	"git.zmanhobbies.com/software/apireg/event"
+// 	"git.zmanhobbies.com/software/eventsocket"
 // )
 
 // //Client written in go for current SwitchMachineHandler

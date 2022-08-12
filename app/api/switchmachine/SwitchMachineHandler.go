@@ -4,20 +4,19 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 
-	apiModel "github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware/tortoise"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/environment"
-	env "github.com/ZacharyDuve/apireg/environment"
+	apiModel "git.zmanhobbies.com/software/SwitchMachineDriverServer/app/api/model"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware/tortoise"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/environment"
+	env "git.zmanhobbies.com/software/apireg/environment"
 	"github.com/gorilla/mux"
 )
 
@@ -100,32 +99,21 @@ func (this *switchMachineHandler) handleGetSwitchMachine(w http.ResponseWriter, 
 
 func (this *switchMachineHandler) handleUpdateSwitchMachine(w http.ResponseWriter, r *http.Request) {
 
-	switchMachines := make([]*apiModel.SwitchMachine, 0)
-	err := json.NewDecoder(r.Body).Decode(&switchMachines)
-	log.Println("DEBUG -", len(switchMachines))
-	for _, cur := range switchMachines {
-		log.Println("DEBUG -", cur)
-	}
+	//switchMachines := make([]*apiModel.SwitchMachine, 0)
+	switchMachineReq := &apiModel.SwitchMachine{}
+	err := json.NewDecoder(r.Body).Decode(&switchMachineReq)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
 		return
 	}
-	errors := make([]error, 0)
-	for _, curSMReq := range switchMachines {
-		log.Println("DEBUG -", curSMReq)
-		err = this.controller.UpdateSwitchMachine(curSMReq)
 
-		if err != nil {
-			errors = append(errors, err)
-			log.Println(err)
-		}
-	}
+	err = this.controller.UpdateSwitchMachine(switchMachineReq)
 
-	if len(errors) > 0 {
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprint(errors)))
+		w.Write([]byte(err.Error()))
 	}
 
 }

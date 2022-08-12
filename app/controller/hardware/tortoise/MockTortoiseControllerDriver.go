@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
 )
 
 type MockHardwareDriver interface {

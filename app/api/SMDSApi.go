@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/switchmachine"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/environment"
-	"github.com/ZacharyDuve/apireg"
-	"github.com/ZacharyDuve/apireg/api"
-	"github.com/ZacharyDuve/serverid"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/api/switchmachine"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/environment"
+	"git.zmanhobbies.com/software/apireg"
+	"git.zmanhobbies.com/software/apireg/api"
+	"git.zmanhobbies.com/software/serverid"
 	"github.com/gorilla/mux"
 )
 

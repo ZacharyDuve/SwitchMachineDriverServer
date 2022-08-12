@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 type SwitchMachineMotorState string

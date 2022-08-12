@@ -6,10 +6,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/persistance"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/event"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/persistance"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 const (

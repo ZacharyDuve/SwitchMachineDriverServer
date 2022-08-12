@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
-	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
+	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 type bitOrder bool
