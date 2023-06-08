@@ -1,7 +1,7 @@
 package model
 
 import (
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 type GPIOState string

@@ -1,6 +1,6 @@
 package model
 
-import "git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 
 type SwitchMachinePosition string
 

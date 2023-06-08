@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 func noopTRXFunc(w, r []byte) error {
@@ -16,12 +16,12 @@ func noopCloseFunc() error {
 	return nil
 }
 
-//Test to see if baseTortoiseControllerDriver implements functions of TortoiseControllerDriver. Compile should fail if it doesn't
+// Test to see if baseTortoiseControllerDriver implements functions of TortoiseControllerDriver. Compile should fail if it doesn't
 func TestBaseTortoiseControllerDriverImplementsTortoiseControllerDriver(t *testing.T) {
 	var _ hardware.Driver = &baseTortoiseControllerDriver{}
 }
 
-//Test that writing to trxfunc works as intended
+// Test that writing to trxfunc works as intended
 func TestThatTRXFuncIsCalled(t *testing.T) {
 	calledTRXFuncChan := make(chan bool)
 	trxFunc := func(w, r []byte) error {
@@ -41,7 +41,7 @@ func TestThatTRXFuncIsCalled(t *testing.T) {
 	<-calledTRXFuncChan
 }
 
-//---------------------------- isConnectedFromPositionBits ----------------------------
+// ---------------------------- isConnectedFromPositionBits ----------------------------
 func TestIsConnectedFromPositionBitsReturnsFalseIfPositionIsDisconnected(t *testing.T) {
 	if isConnectedFromPositionBits(positionDisconnected) {
 		t.Fail()
@@ -122,7 +122,7 @@ func TestGetSMPositionFromRxBitsReturnsReturnsPositionUnknownWhenBitsMapToPositi
 	}
 }
 
-//------------------------------------ getRxBitsForPortNumber ------------------------------------------
+// ------------------------------------ getRxBitsForPortNumber ------------------------------------------
 func TestGetRxBitsForPortNumberReturnsByteWithValueInBits0And1ForPort0(t *testing.T) {
 	if hasDataInBits2Through7(getRxBitsForPortNumber(0xFF, 0)) {
 		t.Fail()
@@ -171,7 +171,7 @@ func TestGetRxBitsForPortNumberPanicsForPortNumbersLessThan0(t *testing.T) {
 	getRxBitsForPortNumber(0xFF, -1)
 }
 
-//--------------------------------------------- calcTxByteOffsetFromId -----------------------
+// --------------------------------------------- calcTxByteOffsetFromId -----------------------
 func TestWhencalcTxByteOffsetFromIdWithId0Returns0(t *testing.T) {
 	if calcTxByteOffsetFromId(switchmachine.Id(0)) != 0 {
 		t.Fail()
@@ -328,7 +328,7 @@ func TestThatUpdatingSwitchMachineConnectOnId0FromPosition0To1CausesRemovedEvent
 	}
 }
 
-//------------------------------------UpdateSwitchMachine----------------------------------
+// ------------------------------------UpdateSwitchMachine----------------------------------
 func TestThatUpdatingGPIO0OnPort0Causes0x10ToBeWrittenForCorrectByte(t *testing.T) {
 	wasTxWrittenAsExpected := false
 	waitChan := make(chan bool)

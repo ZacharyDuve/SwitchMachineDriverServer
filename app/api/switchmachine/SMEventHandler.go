@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"sync"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/api/model"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/event"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )

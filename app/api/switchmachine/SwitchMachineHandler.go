@@ -10,13 +10,13 @@ import (
 	"strconv"
 	"time"
 
-	apiModel "git.zmanhobbies.com/software/SwitchMachineDriverServer/app/api/model"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware/tortoise"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/environment"
-	env "git.zmanhobbies.com/software/apireg/environment"
+	apiModel "github.com/ZacharyDuve/SwitchMachineDriverServer/app/api/model"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware/tortoise"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/environment"
+	env "github.com/ZacharyDuve/apireg/environment"
 	"github.com/gorilla/mux"
 )
 

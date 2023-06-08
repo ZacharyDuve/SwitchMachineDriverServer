@@ -6,10 +6,10 @@ import (
 	"log"
 	"time"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/event"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/persistance"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/persistance"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 const (
@@ -31,7 +31,7 @@ type tortoiseControllerImpl struct {
 	smEventListenerFunc func(event.SwitchMachineEvent)
 }
 
-//Wrapping the internal testable call as an external facing interface to restrict functions
+// Wrapping the internal testable call as an external facing interface to restrict functions
 func NewTortoiseController(driver hardware.Driver) TortoiseController {
 	if driver == nil {
 		panic("driver is required for NewTortoiseController")
@@ -44,7 +44,7 @@ func NewTortoiseController(driver hardware.Driver) TortoiseController {
 	return controller
 }
 
-//Function that returns a *tortoiseControllerImpl so that we can use its functions in tests
+// Function that returns a *tortoiseControllerImpl so that we can use its functions in tests
 func newTortoiseController() *tortoiseControllerImpl {
 	controller := &tortoiseControllerImpl{}
 	controller.existingSMStates = persistance.NewSwitchMachineStore()
@@ -87,7 +87,7 @@ func (this *tortoiseControllerImpl) UpdateSwitchMachine(requestState switchmachi
 	return err
 }
 
-//Trying to cover the case were we are where we want but we are moving away from it
+// Trying to cover the case were we are where we want but we are moving away from it
 func isMotorRunningToOppositePosition(newS, curS switchmachine.State) bool {
 	return newS.Position() == switchmachine.Position0 && curS.MotorState() == switchmachine.MotorStateToPos1 ||
 		newS.Position() == switchmachine.Position1 && curS.MotorState() == switchmachine.MotorStateToPos0

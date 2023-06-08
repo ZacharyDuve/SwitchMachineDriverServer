@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 const (

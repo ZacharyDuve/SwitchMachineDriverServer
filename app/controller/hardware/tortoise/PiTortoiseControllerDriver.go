@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/conn/v3/spi"
 	"periph.io/x/conn/v3/spi/spireg"

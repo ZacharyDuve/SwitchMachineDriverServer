@@ -3,7 +3,7 @@ package persistance
 import (
 	"testing"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 func TestNewSwitchMachineStoreStartsNonNil(t *testing.T) {

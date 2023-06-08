@@ -1,13 +1,13 @@
-module git.zmanhobbies.com/software/SwitchMachineDriverServer
+module github.com/ZacharyDuve/SwitchMachineDriverServer
 
-go 1.18
+go 1.20
 
 require (
-	git.zmanhobbies.com/software/apireg v0.1.26
-	git.zmanhobbies.com/software/serverid v0.1.3
+	github.com/ZacharyDuve/apireg v0.1.25
+	github.com/ZacharyDuve/serverid v0.1.2
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
-	periph.io/x/conn/v3 v3.6.10
-	periph.io/x/host/v3 v3.7.2
+	periph.io/x/conn/v3 v3.7.0
+	periph.io/x/host/v3 v3.8.2
 )

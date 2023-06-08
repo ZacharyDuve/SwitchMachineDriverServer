@@ -1,6 +1,6 @@
 package main
 
-import "git.zmanhobbies.com/software/SwitchMachineDriverServer/app/api"
+import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/api"
 
 func main() {
 	api := api.NewSMDSApi()

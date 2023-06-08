@@ -1,6 +1,6 @@
 package hardware
 
-import "git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 
 type DriverEventType uint8
 
