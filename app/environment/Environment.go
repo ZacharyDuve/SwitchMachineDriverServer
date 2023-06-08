@@ -3,7 +3,7 @@ package environment
 import (
 	"os"
 
-	"git.zmanhobbies.com/software/apireg/environment"
+	"github.com/ZacharyDuve/apireg/environment"
 )
 
 func GetCurrent() environment.Environment {

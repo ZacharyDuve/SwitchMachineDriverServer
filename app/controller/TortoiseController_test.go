@@ -3,8 +3,8 @@ package controller
 import (
 	"testing"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/hardware"
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/hardware"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 func TestUpdateSwitchMachineReturnsErrorIfSwitchMachineIsUnknown(t *testing.T) {

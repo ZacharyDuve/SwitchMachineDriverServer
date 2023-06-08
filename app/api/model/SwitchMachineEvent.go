@@ -1,6 +1,6 @@
 package model
 
-import "git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/event"
+import "github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/event"
 
 type SwitchMachineEventType string
 

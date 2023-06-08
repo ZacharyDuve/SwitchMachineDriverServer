@@ -3,7 +3,7 @@ package hardware
 import (
 	"io"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
 )
 
 type Driver interface {

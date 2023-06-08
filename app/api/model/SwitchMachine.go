@@ -3,8 +3,8 @@ package model
 import (
 	"time"
 
-	"git.zmanhobbies.com/software/SwitchMachineDriverServer/app/controller/switchmachine"
-	"git.zmanhobbies.com/software/serverid"
+	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller/switchmachine"
+	"github.com/ZacharyDuve/serverid"
 	"github.com/google/uuid"
 )
 
