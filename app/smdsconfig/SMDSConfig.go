@@ -8,16 +8,27 @@ import (
 	"github.com/google/uuid"
 )
 
+type Environment string
+
+const (
+	Production  Environment = "production"
+	Test        Environment = "test"
+	Development Environment = "development"
+	Local       Environment = "local"
+)
+
 const (
 	configFilePath string = "server-config.json"
 )
 
 type SMDSConfig interface {
 	SMDSId() string
+	Environment() Environment
 }
 
 type smdsConfig struct {
 	id string
+	environ Environment
 }
 
 func (this *smdsConfig) SMDSId() string {
