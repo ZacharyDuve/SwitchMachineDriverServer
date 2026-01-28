@@ -38,7 +38,11 @@ type eventServer struct {
 func newEventServer() *eventServer {
 	eS := &eventServer{}
 	eS.upgrader.CheckOrigin = func(r *http.Request) bool {
-		return true
+		hostName := r.URL.Hostname()
+		if hostName == "localhost" || hostName == "127.0.0.1" {
+			return true
+		}
+		return false
 	}
 	eS.clients = make([]*websocket.Conn, 0)
 	eS.clientsMutex = &sync.Mutex{}
