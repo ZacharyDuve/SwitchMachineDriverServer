@@ -1,6 +1,6 @@
 module github.com/ZacharyDuve/SwitchMachineDriverServer
 
-go 1.20
+go 1.25
 
 require (
 	github.com/ZacharyDuve/apireg v0.1.25
