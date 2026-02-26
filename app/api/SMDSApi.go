@@ -25,14 +25,14 @@ const (
 // 	//apiRegistry apireg.ApiRegistry
 // }
 
-func NewSMDSApi(logger *slog.Logger, svrIDSvc serverid.ServerIdService) (http.Handler, error) {
+func NewSMDSApi(logger *slog.Logger, router *mux.Router, svrIDSvc serverid.ServerIdService) error {
 
 	if logger == nil {
-		return nil, errors.New("error call to NewSMDSApi failed due to missing logger")
+		return errors.New("error call to NewSMDSApi failed due to missing logger")
 	}
 
 	if svrIDSvc == nil {
-		return nil, errors.New("error call to NewSMDSApi failed due to missing ServerIDService")
+		return errors.New("error call to NewSMDSApi failed due to missing ServerIDService")
 	}
 
 	logger.Debug("Start Creating NewSMDSApi")
@@ -45,14 +45,27 @@ func NewSMDSApi(logger *slog.Logger, svrIDSvc serverid.ServerIdService) (http.Ha
 	// }
 	//api.apiRegistry = reg
 
-	router := mux.NewRouter()
+	router.Use(loggingMiddleware(logger))
+
 	//Need an API sub router to separate from web
-	apiSubRouter := router.PathPrefix("/api").Subrouter()
+	// router.PathPrefix("/api").Handler(switchmachine.NewSwitchMachineHandler(logger, nil))
+	router.Path("/health").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{\"Status\":\"On fire\"}"))
+	})
+	apiRouter := router.PathPrefix("/api").Subrouter()
 
+	switchmachine.NewSwitchMachineHandler(logger, apiRouter, nil)
 	//Make it so that we can get the server id
-	apiSubRouter.HandleFunc(serverid.GetHandlerFuncFromServerIdService(svrIDSvc))
+	//apiSubRouter.HandleFunc(serverid.GetHandlerFuncFromServerIdService(svrIDSvc))
 	//Register the switch machine handler with the api sub router
-	switchmachine.NewSwitchMachineHandler(apiSubRouter)
+	return nil
+}
 
-	return router, nil
+func loggingMiddleware(logger *slog.Logger) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logger.Debug("http request", "method", r.Method, "host", r.Host, "url", r.URL.Path)
+			next.ServeHTTP(w, r)
+		})
+	}
 }

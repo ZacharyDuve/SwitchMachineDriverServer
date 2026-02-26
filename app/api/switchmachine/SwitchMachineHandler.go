@@ -1,6 +1,7 @@
 package switchmachine
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/controller"
@@ -16,14 +17,20 @@ const (
 	smHandlerPath string = "/switchmachine"
 )
 
-func SwitchMachineHandler(tC controller.TortoiseController) http.Handler {
-	router := mux.NewRouter()
+func NewSwitchMachineHandler(logger *slog.Logger, router *mux.Router, tC controller.TortoiseController) {
+	//router := mux.NewRouter()
 
 	// Need to get the upgrader for websocket somewhere in here
 
-	
+	smRouter := router.Path("/switchmachine").Subrouter()
 
-	router.
+	smRouter.Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("got a GET request for /switchmachine")
+	})
+
+	smRouter.Methods(http.MethodPost).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.Debug("got a POST request for /switchmachine")
+	})
 }
 
 // func NewSwitchMachineHandler(rtr *mux.Router) http.Handler {

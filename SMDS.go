@@ -8,6 +8,7 @@ import (
 
 	"github.com/ZacharyDuve/SwitchMachineDriverServer/app/api"
 	"github.com/ZacharyDuve/serverid"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -20,11 +21,13 @@ func main() {
 		panic(err)
 	}
 
-	api, err := api.NewSMDSApi(logger, sIDSvc)
+	rootRouter := mux.NewRouter()
+
+	err = api.NewSMDSApi(logger, rootRouter, sIDSvc)
 
 	if err != nil {
 		log.Fatal("error starting api", "error", err)
 	}
 
-	http.ListenAndServe(":8080", api)
+	http.ListenAndServe(":8080", rootRouter)
 }
